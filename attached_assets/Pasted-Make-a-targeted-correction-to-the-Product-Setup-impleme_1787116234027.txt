@@ -1,0 +1,196 @@
+Make a targeted correction to the Product Setup implementation from the previous prompt.
+
+Do NOT rebuild the Product Setup module or change the other enhancements already implemented.
+
+The correction is specifically for the PRODUCT IMAGES flow.
+
+==================================================
+PRODUCT IMAGES — CORRECT THE FLOW
+=================================
+
+The previous implementation incorrectly made Images available only when editing an existing style.
+
+Change this.
+
+Images should be available as part of the Product Setup creation process, toward the END of the setup flow.
+
+The meeting requirement was:
+
+"Anytime at the end of the process, we would like to have the ability to upload pictures, images."
+
+Therefore, the intended flow should be:
+
+Product / Style Setup
+→ Product Information
+→ Attributes
+→ Logistics
+→ Images
+→ Review / Create
+
+The Images step should be available BEFORE the user completes the initial product/style creation.
+
+==================================================
+IMAGE LEVEL
+===========
+
+For this UI prototype, treat Images as belonging to the PRODUCT / STYLE level, not as a separate image set for every individual SKU.
+
+Do not create separate image upload controls for every SKU.
+
+The conceptual relationship should be:
+
+Style / Product
+└── Images
+
+This should remain consistent when the user later opens the existing style and edits it.
+
+==================================================
+INITIAL CREATION FLOW
+=====================
+
+When creating a new product/style:
+
+1. User completes the existing Product Setup information.
+2. User reaches the Images section near the end of the flow.
+3. User can upload one or more product images.
+4. Images appear in a preview/gallery.
+5. User can remove images before submitting.
+6. User proceeds to Review.
+7. User completes product creation.
+
+Use realistic mock images and mock upload behaviour.
+
+The images should feel like part of the product creation process, NOT a separate application/module.
+
+==================================================
+AFTER CREATION
+==============
+
+Once the product/style has been created, the Images section should remain available when editing the existing style.
+
+Therefore:
+
+NEW STYLE:
+Product Setup
+→ Images
+→ Review
+→ Create
+
+EXISTING STYLE:
+Open Style
+→ Images
+→ View / Add / Remove Images
+
+The same image component should ideally be reused for both states.
+
+==================================================
+IMAGE UI
+========
+
+Use the existing Product Setup design language.
+
+Show something like:
+
+Images
+
+Add product images for internal product reference.
+
+[ + Upload Images ]
+
+Then show a thumbnail gallery when images have been added.
+
+Each image should support:
+
+* Preview
+* Remove
+* Filename where appropriate
+
+If no images have been uploaded:
+
+"No images added yet."
+
+Keep the UI clean and compact.
+
+Do not create an ecommerce-style media manager.
+
+==================================================
+IMAGE PURPOSE
+=============
+
+These images are INTERNAL PRODUCT REFERENCE images.
+
+They are primarily intended to help buyers and merchandise teams understand the product and support buying/ranging decisions.
+
+They are NOT intended to be ecommerce publishing assets.
+
+Include subtle supporting text such as:
+
+"Images are used for internal product reference and automatically optimized for storage."
+
+Do not introduce strict image dimensions or file standards because those have not yet been finalized.
+
+==================================================
+MOCK BEHAVIOUR
+==============
+
+For the front-end prototype:
+
+* Mock image selection/upload.
+* Show a brief upload/loading state.
+* Add the selected image(s) to the gallery.
+* Allow removal.
+* Persist the images in the mock product/style data after creation.
+* When the same style is reopened, display the previously uploaded images.
+
+Do not implement real image storage or external APIs.
+
+The future architecture should conceptually support:
+
+Style/Product
+→ Image Storage
+→ Image Retrieval
+
+Images are NOT expected to be stored in Aptos.
+
+==================================================
+DO NOT CHANGE THESE OTHER REQUIREMENTS
+======================================
+
+Keep the previous implementations unchanged for:
+
+1. PLC Status
+
+   * Current / EOL / Clearance
+   * Clearance is not an initial creation status
+   * PLC changes happen after style creation
+
+2. Inner Pack / Pack UPC
+
+   * Remains under Logistics
+   * Pack UPC is added only after the SKU/style has been created
+   * Do not add Pack UPC creation into the initial creation sequence
+
+Only correct the Images flow.
+
+==================================================
+FINAL CHECK
+===========
+
+Verify that the following works visually:
+
+NEW PRODUCT:
+Start Product Setup
+→ complete existing fields
+→ reach Images near the end
+→ upload images
+→ preview images
+→ Review
+→ Create Product
+
+EXISTING PRODUCT:
+Open existing style
+→ Images
+→ see previously uploaded images
+→ add/remove images
+
+The final result should make Images feel like a natural final step of Product Setup while also allowing the same images to be managed later from the existing style.

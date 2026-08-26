@@ -1,0 +1,443 @@
+We are adding a brand new feature into the existing MerchX frontend application.
+
+IMPORTANT:
+- DO NOT modify or break any existing flows/screens.
+- DUPLICATE existing patterns/components where useful.
+- Keep styling/design language fully consistent with the current application.
+- Frontend only for now.
+- Use mock JSON data and mocked API services.
+- No backend integration yet.
+- Focus heavily on UX clarity and dynamic behavior.
+
+====================================================
+FEATURE: PRODUCT SETUP WIZARD
+====================================================
+
+We are replacing an old Excel-based product setup process with a guided, dynamic wizard experience.
+
+The goal is:
+- Make product creation simple
+- Dynamically show ONLY relevant fields
+- Enforce mandatory data
+- Reduce user overwhelm
+- Support retail merchandising workflows
+- Support future governance/validation rules
+
+This is NOT a simple static form.
+
+This is a:
+- dynamic wizard
+- metadata-driven form system
+- hierarchy-driven validation flow
+
+====================================================
+OVERALL UX DIRECTION
+====================================================
+
+The experience should feel modern, premium, clean, and guided.
+
+Design inspiration:
+- Shopify product creation
+- Modern PIM systems
+- Airtable-like dynamic forms
+- Enterprise SaaS onboarding flows
+
+VISUAL STYLE:
+- Frosted glass / soft translucent cards
+- Subtle gradients
+- Soft shadows
+- Minimal but information-dense
+- Strong spacing hierarchy
+- Smooth transitions/animations
+- Modern typography
+- Contextual validation states
+- Elegant progressive disclosure
+
+DO NOT:
+- Build giant ERP tables
+- Show all fields at once
+- Create spreadsheet-style UX
+- Overwhelm users
+
+====================================================
+MAIN LAYOUT
+====================================================
+
+Create a new route/screen:
+
+/product-setup
+
+Screen layout:
+
+----------------------------------------------------
+TOP AREA
+----------------------------------------------------
+
+Header:
+- Title: "Product Setup"
+- Subtitle:
+  "Create and configure new product styles and SKUs"
+
+Right side actions:
+- Save Draft
+- Submit Product
+
+Show validation summary badge:
+- "4 Missing Fields"
+- "Ready to Submit"
+
+----------------------------------------------------
+LEFT SIDEBAR
+----------------------------------------------------
+
+Sticky wizard progress/navigation.
+
+Steps:
+
+1. Product Context
+2. Hierarchy Selection
+3. Core Attributes
+4. Planning & Logistics
+5. SKU Generation
+6. Review & Submit
+
+Each step:
+- icon
+- completion state
+- active state
+- validation warning state
+
+Use elegant transitions.
+
+----------------------------------------------------
+MAIN CONTENT AREA
+----------------------------------------------------
+
+Large dynamic content panel.
+
+Each step should feel focused and uncluttered.
+
+Use:
+- animated transitions
+- progressive disclosure
+- card-based grouping
+
+====================================================
+STEP 1 — PRODUCT CONTEXT
+====================================================
+
+Fields:
+- Buyer (dropdown)
+- Vendor (searchable dropdown)
+- Brand
+- Long Description
+- Short Description
+- Product Type
+
+Add:
+"Copy Existing Style" feature
+
+Button opens modal:
+- searchable mock product list
+- filter by vendor/category
+- selecting a style prefills wizard data
+
+Mock products should contain:
+- category
+- vendor
+- hierarchy
+- logistics
+- planning data
+- sku variations
+
+====================================================
+STEP 2 — HIERARCHY SELECTION
+====================================================
+
+MOST IMPORTANT PART OF ENTIRE FEATURE.
+
+Build cascading hierarchy selectors.
+
+Flow:
+Category
+→ Subcategory
+→ Merch Area
+→ Planning Group
+→ Subgroup
+
+Use elegant connected selectors.
+
+EXAMPLE MOCK HIERARCHIES:
+
+TECH
+- Audio
+  - Headphones
+    - Wireless
+    - Noise Cancelling
+- Travel Essentials
+
+ALCOHOL
+- Whiskey
+- Wine
+- Beer
+
+FRESH FOOD
+- Sandwiches
+- Salads
+- Bakery
+
+FASHION
+- Apparel
+- Accessories
+
+When hierarchy changes:
+- dynamic fields update
+- mandatory fields update
+- validations update
+
+Animate these transitions smoothly.
+
+====================================================
+DYNAMIC FIELD ENGINE
+====================================================
+
+Build a metadata-driven dynamic form engine.
+
+DO NOT hardcode all field rendering.
+
+Create mock configuration JSON like:
+
+{
+  field: "ageRestriction",
+  label: "Age Restriction",
+  appliesTo: ["ALCOHOL"],
+  required: true,
+  type: "dropdown"
+}
+
+====================================================
+CONDITIONAL FIELD LOGIC
+====================================================
+
+Examples:
+
+IF category == "ALCOHOL"
+SHOW:
+- Age Restriction
+- Licensing
+
+IF merchArea == "Headphones"
+SHOW:
+- Warranty
+- Battery Type
+
+IF category == "FRESH FOOD"
+SHOW:
+- Shelf Life
+- Temperature Control
+- Protein Type
+
+====================================================
+STEP 3 — CORE ATTRIBUTES
+====================================================
+
+Dynamic cards.
+
+Possible sections:
+- Product Information
+- Compliance
+- Vendor Details
+- Retail Attributes
+
+Field types:
+- text
+- numeric
+- dropdown
+- searchable dropdown
+- tag selector
+- toggle
+- multi-select
+
+Use:
+- inline helper text
+- validation messages
+- required indicators
+
+====================================================
+STEP 4 — PLANNING & LOGISTICS
+====================================================
+
+Fields:
+- Lead Time
+- Order Multiple
+- Distribution Multiple
+- Replenishable Flag
+- Weight
+- Dimensions
+- Carton Quantity
+- Temperature Control
+
+Validation examples:
+- UPC numeric length
+- duplicate UPC warning
+- lead time range warning
+
+Show:
+- warnings
+- soft validation
+- hard validation
+
+====================================================
+STEP 5 — SKU GENERATION
+====================================================
+
+Very important.
+
+One style can generate multiple SKUs.
+
+Create elegant SKU matrix generator.
+
+Allow:
+- color selection
+- size selection
+- auto SKU preview
+
+Example:
+
+STYLE:
+Wireless Headphones
+
+SKUs:
+- Black / Small
+- Black / Medium
+- White / Small
+- White / Medium
+
+Display generated SKUs in:
+- responsive table/cards
+- editable inline
+
+Add:
+- auto-generated SKU IDs
+- UPC preview
+- inventory placeholders
+
+====================================================
+STEP 6 — REVIEW & SUBMIT
+====================================================
+
+Create elegant review screen.
+
+Show grouped summary:
+- Product Info
+- Hierarchy
+- Attributes
+- Logistics
+- Generated SKUs
+
+Validation panel:
+- Missing fields
+- Invalid fields
+- Warnings
+
+Submission button:
+- mocked async API call
+- loading state
+- success toast
+
+On success:
+- show generated Style ID
+- show generated SKU IDs
+
+====================================================
+VALIDATION SYSTEM
+====================================================
+
+Implement validation layers:
+
+1. Required validation
+2. Format validation
+3. Range validation
+4. Dropdown validation
+5. Duplicate validation (mocked)
+
+Validation should happen:
+- inline
+- realtime
+- on submit
+
+====================================================
+SAVE DRAFT BEHAVIOR
+====================================================
+
+User can save incomplete drafts.
+
+Drafts should:
+- persist in mocked local state
+- appear in a mocked "Recent Drafts" section
+
+====================================================
+EXTRA UI ENHANCEMENTS
+====================================================
+
+Add:
+- subtle motion
+- section fade-ins
+- smooth hierarchy transitions
+- contextual helper tooltips
+- sticky validation sidebar
+- keyboard-friendly navigation
+
+====================================================
+MOCK DATA
+====================================================
+
+Create realistic mock:
+- vendors
+- buyers
+- brands
+- hierarchy trees
+- validation rules
+- existing styles
+- SKU grids
+
+====================================================
+TECHNICAL EXPECTATIONS
+====================================================
+
+Use:
+- reusable components
+- clean state management
+- modular architecture
+- maintainable config-driven rendering
+
+Suggested structure:
+- ProductSetupWizard
+- HierarchySelector
+- DynamicFieldRenderer
+- ValidationEngine
+- SKUGenerator
+- ReviewPanel
+- CopyStyleModal
+
+====================================================
+IMPORTANT
+====================================================
+
+The screen should feel:
+- intelligent
+- guided
+- modern
+- enterprise-grade
+- scalable
+
+The user should NEVER feel overwhelmed.
+
+The hierarchy-driven progressive reveal is the core UX concept.
+
+Focus heavily on:
+- UX clarity
+- elegant interactions
+- dynamic behavior
+- metadata-driven rendering
+- maintainability

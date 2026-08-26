@@ -1,0 +1,473 @@
+Update the EXISTING Product Setup module in the current application. Do NOT rebuild the Product Setup from scratch and do not replace the existing flow or design language.
+
+This is a UI/UX enhancement based on the latest Product Setup requirements. Preserve everything that already works and integrate the following three capabilities naturally into the existing Product Setup experience.
+
+IMPORTANT:
+
+* This is primarily a FRONT-END/UI prototype.
+* Use realistic mock data and mocked API interactions.
+* Do not attempt to implement real Aptos APIs.
+* The UI should make it clear where future APIs would be triggered.
+* Maintain the existing application's visual language, spacing, typography, navigation, components, and interaction patterns.
+* Do not create a separate standalone product setup application.
+* Reuse existing components wherever possible.
+
+==================================================
+
+1. PLC / CLEARANCE STATUS MANAGEMENT
+   ==================================================
+
+The current application should NOT treat Aptos Price Status as the definitive PLC status.
+
+The intended product lifecycle states are:
+
+Current
+EOL
+Clearance
+
+A product should NOT be created initially as Clearance.
+
+Instead, PLC/Clearance status should be manageable AFTER the style/SKU already exists.
+
+### Existing Product / Style View
+
+Within the existing Product Setup experience, when a user opens an existing style/SKU, add a clearly accessible PLC Status area.
+
+For example:
+
+PLC Status
+Current
+
+[Change Status]
+
+The current status should be clearly displayed as a lifecycle/status value rather than exposing the underlying Aptos pricing terminology.
+
+Clicking "Change Status" should open a focused modal or side panel.
+
+### Change PLC Status interaction
+
+Show:
+
+Style / Product
+SKU
+Current PLC Status
+New PLC Status
+
+Example:
+
+Style:
+WH-12345
+
+SKU:
+WH-12345-BLK-M
+
+Current PLC Status:
+Current
+
+New PLC Status:
+[ Clearance ▼ ]
+
+[Cancel] [Update Status]
+
+Available lifecycle statuses:
+
+* Current
+* EOL
+* Clearance
+
+Do not allow an initial product creation flow to select Clearance.
+
+This action should be represented as a mocked future API action.
+
+After clicking Update Status:
+
+* Show a confirmation state.
+* Update the displayed status in the UI.
+* Show a small success notification such as:
+  "PLC status updated successfully."
+* The mock data should reflect the new state.
+
+IMPORTANT DESIGN CONCEPT:
+
+The application should conceptually treat the Style Master as the source of truth for PLC status.
+
+Do NOT expose "Price Status" as if it is the same thing as PLC Status.
+
+This distinction is important because Aptos Price Status is used for pricing and has historically caused ambiguity when determining PLC lifecycle.
+
+==================================================
+2. PRODUCT IMAGES
+=================
+
+Add the ability to upload and view product/style images.
+
+This should be integrated into the existing Product Setup rather than becoming a separate module.
+
+Images are intended primarily as INTERNAL PRODUCT REFERENCE material for buyers and merchandise teams.
+
+They are NOT ecommerce publishing assets.
+
+This is particularly useful for products where visual reference is important when making buying/ranging decisions.
+
+### Recommended UI
+
+Add a new grouping/section called:
+
+Images
+
+Place it naturally within the existing Product Setup information architecture. If the current layout already has logical groupings, use the existing grouping conventions rather than introducing a completely new visual pattern.
+
+The section should include:
+
+Images
+
+[ + Upload Images ]
+
+Show uploaded images as a clean thumbnail grid.
+
+Each image should support:
+
+* Preview
+* Remove/delete
+* Filename
+* Optional upload metadata if this fits the existing UI
+
+Use realistic mock product imagery.
+
+### Upload interaction
+
+Clicking "+ Upload Images" should open a polished upload interaction.
+
+Support the conceptual flow:
+
+Select images
+→ preview selected images
+→ upload
+→ images appear in the product gallery
+
+Since this is a front-end prototype, mock the upload process.
+
+Include realistic loading/progress behaviour if it fits the existing application.
+
+### Image handling
+
+The requirements indicate that vendor images may have inconsistent resolutions and file sizes.
+
+Therefore the UI should communicate that uploaded images are automatically optimized/compressed.
+
+For example, beneath the upload control:
+
+"Images are automatically optimized for internal product reference."
+
+Do NOT introduce unnecessarily strict image specifications because the exact final image standards have not yet been defined.
+
+Images will ultimately be stored outside Aptos in the application's own image storage layer.
+
+For this prototype, simply mock that behaviour.
+
+==================================================
+3. INNER PACK / PACK UPC
+========================
+
+Add support for creating an Inner Pack / Pack UPC against an EXISTING SKU/style.
+
+This belongs under the existing:
+
+Logistics
+
+grouping.
+
+The business concept is:
+
+A product can be sold as individual units but ordered, received and transported in an inner pack.
+
+Example:
+
+Water is sold as individual units.
+
+Vendor order multiple = 6.
+
+The vendor supplies an inner pack containing 6 units.
+
+That inner pack has its own unique UPC.
+
+The system needs to capture that Pack UPC and its relationship to the SKU/style.
+
+### IMPORTANT FLOW RULE
+
+Do NOT add Pack UPC creation into the initial SKU creation flow.
+
+The reason is to avoid requiring multiple dependent APIs to execute sequentially during initial product creation.
+
+Instead:
+
+1. Create the SKU/style normally.
+2. Open the existing SKU/style.
+3. Go to Logistics.
+4. Add/create an Inner Pack / Pack UPC.
+5. Submit it through the separate interaction.
+
+### Logistics UI
+
+Within the existing Logistics grouping, add a section such as:
+
+Inner Packs
+
+or
+
+Pack Information
+
+Show existing pack configurations if available.
+
+Example:
+
+Inner Pack
+Pack UPC: 050123456789
+Order Multiple: 6
+Units per Pack: 6
+Status: Active
+
+[ + Add Pack UPC ]
+
+If no pack exists:
+
+Inner Pack / Pack UPC
+
+"No pack UPCs have been configured for this SKU."
+
+[ + Add Pack UPC ]
+
+### Add Pack UPC interaction
+
+Clicking "+ Add Pack UPC" should open a modal or side panel.
+
+Fields should include the concepts established in the discussion:
+
+SKU / Style
+Pack UPC
+Order Multiple
+Units per Pack
+
+Use sensible labels and realistic mock values.
+
+The exact final API field structure has not yet been confirmed, so do NOT invent a large number of additional fields.
+
+Example:
+
+Add Inner Pack
+
+SKU
+WH-12345-BLK-M
+
+Pack UPC
+[ 050123456789 ]
+
+Order Multiple
+[ 6 ]
+
+Units per Pack
+[ 6 ]
+
+[Cancel] [Create Pack UPC]
+
+After submission:
+
+* Show a confirmation state.
+* Add the pack configuration to the Logistics section.
+* Show a success toast:
+  "Pack UPC created successfully."
+* Make it clear that this represents a separate future API operation.
+
+==================================================
+4. PRODUCT SETUP INFORMATION ARCHITECTURE
+=========================================
+
+Do not disrupt the existing Product Setup wizard/flow.
+
+The overall structure should remain:
+
+Product / Style selection
+→ hierarchy/grouping selection
+→ relevant attributes
+→ logistics/etc.
+→ review/save
+
+The three new capabilities should fit into the existing structure:
+
+PRODUCT / STYLE
+├── Existing Product Information
+├── Existing Attributes
+├── PLC Status
+│   └── Change PLC Status
+├── Images
+│   └── Upload / View Images
+└── Logistics
+└── Inner Packs / Pack UPC
+└── Add Pack UPC
+
+The exact placement should follow the existing Product Setup design rather than forcing this exact hierarchy if the current UI has a better equivalent.
+
+==================================================
+5. EXISTING STYLE VS NEW STYLE
+==============================
+
+Make the distinction visually and functionally clear.
+
+NEW PRODUCT / STYLE:
+
+* Can create the product using the existing flow.
+* Do NOT expose Pack UPC creation as part of the initial creation sequence.
+* Do NOT allow initial PLC status to be Clearance.
+
+EXISTING PRODUCT / STYLE:
+
+* Can view/change PLC status.
+* Can upload/view images.
+* Can add Inner Pack / Pack UPC configurations.
+
+This distinction is important.
+
+==================================================
+6. MOCK DATA
+============
+
+Extend the existing mock data rather than creating a disconnected dataset.
+
+Use realistic examples such as:
+
+Style:
+WH-12345
+
+SKU:
+WH-12345-BLK-M
+
+PLC Status:
+Current
+
+Images:
+3 product images
+
+Logistics:
+Order Multiple: 6
+Inner Pack:
+Pack UPC: 050123456789
+Units per Pack: 6
+
+Include several styles with different states so the UI can demonstrate:
+
+* Current product
+* EOL product
+* Product with Clearance status
+* Product with no images
+* Product with multiple images
+* Product with no pack UPC
+* Product with one or more pack UPC configurations
+
+==================================================
+7. UX DETAILS
+=============
+
+The experience should feel like an extension of the existing Product Setup, not three bolt-on features.
+
+Use:
+
+* Existing cards
+* Existing tabs/accordions
+* Existing buttons
+* Existing modal/side-panel patterns
+* Existing notification/toast patterns
+* Existing typography and spacing
+
+Avoid:
+
+* Excessive new navigation
+* Large new pages
+* Unnecessary dashboards
+* Overly complicated forms
+* Generic placeholder UI
+
+The user should be able to understand the relationship between:
+
+Style → PLC Status
+Style → Images
+Style → Logistics → Inner Pack → Pack UPC
+
+without needing additional explanation.
+
+==================================================
+8. API BOUNDARIES
+=================
+
+Represent the future integrations clearly in the front-end architecture/mock behaviour:
+
+A. PLC Status
+Future:
+Separate pricing/status API → Aptos
+
+B. Images
+Future:
+Application image storage → image retrieval layer
+
+C. Pack UPC
+Future:
+Pack UPC API → Aptos
+
+Do not actually implement these integrations.
+
+Use mocked functions/data for now.
+
+==================================================
+9. IMPORTANT: DO NOT BREAK EXISTING PRODUCT SETUP
+=================================================
+
+Before making changes:
+
+1. Inspect the existing Product Setup implementation.
+2. Understand its current wizard/sections/components.
+3. Reuse existing components and patterns.
+4. Add the three capabilities incrementally.
+5. Preserve all existing functionality.
+6. Do not redesign unrelated Product Setup screens.
+
+After implementation, verify that the existing Product Setup creation/edit flow still works.
+
+==================================================
+10. FINAL UI CHECK
+==================
+
+Once implemented, test the following flows:
+
+FLOW 1 — Existing Style → Change PLC Status
+Open existing style
+→ view current PLC status
+→ Change Status
+→ select EOL/Clearance
+→ confirm
+→ status updates
+→ success notification
+
+FLOW 2 — Existing Style → Upload Image
+Open existing style
+→ Images
+→ Upload Images
+→ select mock image(s)
+→ preview
+→ upload
+→ image appears in gallery
+
+FLOW 3 — Existing Style → Add Inner Pack
+Open existing style
+→ Logistics
+→ Inner Packs
+→ Add Pack UPC
+→ enter Pack UPC + Order Multiple + Units per Pack
+→ create
+→ new pack appears in Logistics
+
+FLOW 4 — New Style
+Start new Product Setup
+→ existing creation flow remains intact
+→ no Pack UPC creation during initial setup
+→ Clearance is not available as an initial lifecycle status
+
+The final result should look and feel like the SAME Product Setup application, simply enhanced with these three new capabilities.

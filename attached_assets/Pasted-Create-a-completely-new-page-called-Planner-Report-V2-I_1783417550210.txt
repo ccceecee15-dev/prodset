@@ -1,0 +1,377 @@
+Create a completely new page called "Planner Report V2".
+
+IMPORTANT
+
+- This is a proof-of-concept replacement for the current Planner Report.
+- DO NOT modify the existing Planner Report screen in any way.
+- Keep both reports available in the application.
+- Reuse the application's existing design language, typography, spacing, components, colours and navigation.
+- The new page should feel like a natural part of the existing application.
+
+=========================================================
+DESIGN GOAL
+=========================================================
+
+Do NOT recreate the Excel sheet.
+
+Do NOT build a BI dashboard full of filters.
+
+Instead, build a modern enterprise merchandising analysis workspace.
+
+The Excel report is really an interactive Pivot Report where the planner changes HOW they view the data rather than filtering it.
+
+The UI should preserve every business capability while making the experience significantly easier.
+
+=========================================================
+PAGE STRUCTURE
+=========================================================
+
+The page consists of three major areas.
+
+---------------------------------------------------------
+1. Header
+---------------------------------------------------------
+
+Planner Report V2
+
+Subtitle
+
+Analyse assortment distribution across Store Formats and Grades.
+
+Provide Export if already available in the application.
+
+---------------------------------------------------------
+2. Analysis Controls
+---------------------------------------------------------
+
+Instead of a traditional filter bar, create a compact Analysis Control Panel.
+
+These controls should feel like "Pivot Table controls".
+
+Display them in a single horizontal row.
+
+Show
+
+Metric
+
+Dropdown
+
+• SKU Count
+• YTD Sales
+• On Hand Inventory
+
+Group Rows By
+
+Dropdown
+
+• Planning Group
+• Sub Planning Group (SPG)
+• Tier Pricing
+• Product Lifecycle
+• Range
+
+These are NOT filters.
+
+Changing these immediately restructures the matrix.
+
+Below these controls add:
+
+Visible Formats
+
+Display every Store Format as selectable chips.
+
+Example
+
+☑ Marketplace
+
+☑ Travel Essentials
+
+☑ High Street
+
+☑ Airport
+
+☑ Outlet
+
+☑ Hospital
+
+☑ Express
+
+Users can temporarily hide formats.
+
+This only changes the report layout.
+
+It does NOT filter the underlying data.
+
+Below that add
+
+Visible Grades
+
+☑ XS
+
+☑ S
+
+☑ M
+
+☑ L
+
+☑ XL
+
+☑ Mega
+
+Again, this only controls which grade columns are displayed.
+
+=========================================================
+REPORT MATRIX
+=========================================================
+
+This is the primary focus of the screen.
+
+Build a dynamic matrix.
+
+Columns are
+
+Store Format
+
+↓
+
+Store Grade
+
+Rows are determined by the selected "Group Rows By".
+
+Example
+
+Planning Group
+
+Eyewear
+
+Accessories
+
+Travel
+
+or
+
+SPG
+
+Reading Glasses
+
+Sunglasses
+
+Premium
+
+etc.
+
+=========================================================
+HANDLING 7 FORMATS × 6 GRADES
+=========================================================
+
+There are seven Store Formats.
+
+Each format contains up to six Grades.
+
+Showing all 42 columns simultaneously is overwhelming.
+
+Implement grouped expandable column headers.
+
+Each Store Format acts as a collapsible column group.
+
+Collapsed
+
+Marketplace
+
+Total
+
+Expanded
+
+Marketplace
+
+XS
+
+S
+
+M
+
+L
+
+XL
+
+Mega
+
+Users can independently expand or collapse each format.
+
+This dramatically reduces clutter while still supporting every format.
+
+=========================================================
+COLUMN HEADER
+=========================================================
+
+Each visible Grade column displays
+
+Number of Stores
+
+Selected Metric Total
+
+Contribution %
+
+Example
+
+Marketplace
+
+Medium
+
+Stores
+
+14
+
+SKU Count
+
+1,245
+
+Contribution
+
+18.6%
+
+This matches the Excel report.
+
+=========================================================
+TABLE BEHAVIOUR
+=========================================================
+
+Freeze
+
+Left row labels
+
+Top headers
+
+Allow smooth horizontal scrolling.
+
+Maintain sticky headers.
+
+Highlight current row and column on hover.
+
+Allow sorting.
+
+=========================================================
+CELL INTERACTION
+=========================================================
+
+Every value inside the matrix should be clickable.
+
+Clicking a value opens a right-side drawer.
+
+The drawer displays the underlying records.
+
+Example
+
+Style
+
+SKU
+
+Description
+
+Current Retail
+
+Store Format
+
+Store Grade
+
+On Hand
+
+YTD Sales
+
+This prepares the application for future drill-down functionality.
+
+=========================================================
+DISPLAY MODES
+=========================================================
+
+Add a small segmented control.
+
+Matrix
+
+Heatmap
+
+Matrix
+
+Traditional numerical report.
+
+Heatmap
+
+Use subtle background intensity to indicate magnitude.
+
+Do NOT use aggressive colours.
+
+Maintain enterprise styling.
+
+=========================================================
+STICKY CONTEXT PANEL
+=========================================================
+
+Add a small summary panel pinned to one side.
+
+Display
+
+Current Metric
+
+Current Grouping
+
+Visible Formats
+
+Visible Grades
+
+Total Stores
+
+Overall Metric Total
+
+This ensures users never lose context while horizontally scrolling.
+
+=========================================================
+VISUAL DESIGN
+=========================================================
+
+This page should not resemble Excel.
+
+Instead
+
+• Clean spacing
+
+• Enterprise typography
+
+• Sticky headers
+
+• Collapsible column groups
+
+• Light KPI styling
+
+• Modern chips
+
+• Minimal colour
+
+• Data-first design
+
+=========================================================
+ARCHITECTURE
+=========================================================
+
+Build reusable components.
+
+Analysis Controls
+
+Planner Matrix
+
+Collapsible Format Groups
+
+Metric Header
+
+Drill-down Drawer
+
+These components should be reusable for future analytical reports.
+
+=========================================================
+SUCCESS CRITERIA
+=========================================================
+
+When the client compares this screen with the Excel report they should immediately recognise that every analytical capability has been retained.
+
+However, they should also clearly see that this is a modern retail planning application rather than a spreadsheet.
+
+The emphasis should be on discoverability, scalability and ease of analysis while preserving the exact business logic of the original Planner Report.
