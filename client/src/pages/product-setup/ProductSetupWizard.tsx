@@ -1072,14 +1072,21 @@ function SimilarStylesRail({ category, subCategory, merchArea, planningGroup, be
     planning: { replenishable: true }, skuVariants: { colors: [style.colourway], sizes: [style.size] },
   });
   return (
-    <aside className={cn("flex-shrink-0 transition-all", collapsed ? "w-10" : "w-[280px]")}>
-      <div className="sticky top-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/60 shadow-sm overflow-hidden">
-        <button type="button" onClick={onToggle} className="w-full flex items-center justify-between px-3 py-3 text-left">
-          {!collapsed && <span><span className="block text-xs font-bold text-slate-700 dark:text-slate-200">Similar Styles</span><span className="block text-[10px] text-slate-400 mt-0.5">Based on your current hierarchy</span></span>}
+    <aside className={cn("self-start flex-shrink-0 transition-all duration-200", collapsed ? "w-11" : "w-full lg:w-[280px]")}>
+      <div className="sticky top-4 max-h-[calc(100vh-7rem)] rounded-xl border border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-900/60 shadow-sm overflow-hidden">
+        <button type="button" onClick={onToggle} aria-expanded={!collapsed} aria-label={collapsed ? "Open Benchmarking" : "Collapse Benchmarking"} className={cn("w-full flex items-center text-left", collapsed ? "flex-col gap-2 px-2 py-3" : "justify-between gap-2 px-3 py-3")}>
+          {collapsed ? (
+            <>
+              <GitBranch size={15} className="text-primary" />
+              <span className="text-[10px] font-semibold text-slate-600 dark:text-slate-300 [writing-mode:vertical-rl]">Benchmarking</span>
+            </>
+          ) : (
+            <span className="flex items-start gap-2"><GitBranch size={14} className="mt-0.5 flex-shrink-0 text-primary" /><span><span className="block text-xs font-bold text-slate-700 dark:text-slate-200">Similar Styles</span><span className="block text-[10px] text-slate-400 mt-0.5">Styles matching your selected hierarchy</span></span></span>
+          )}
           <ChevronRight size={14} className={cn("text-slate-400 transition-transform", !collapsed && "rotate-180")} />
         </button>
         {!collapsed && (
-          <div className="border-t border-slate-100 dark:border-slate-800 p-3 space-y-2.5">
+          <div className="max-h-[calc(100vh-12rem)] overflow-y-auto border-t border-slate-100 dark:border-slate-800 p-3 space-y-2.5">
             {hierarchyDepth === 0 ? <div className="py-5 text-center"><p className="text-xs font-semibold text-slate-600 dark:text-slate-300">Similar styles will appear here</p><p className="text-[10px] text-slate-400 mt-1 leading-relaxed">Make your hierarchy selections to see relevant styles you can use as a benchmark.</p></div> : matches.length === 0 ? <p className="py-5 text-center text-[10px] text-slate-400">No similar styles found for this hierarchy.</p> : matches.map(style => {
               const selected = benchmarkSource?.styleCode === style.styleCode;
               return <div key={style.styleCode} className="rounded-lg border border-slate-100 dark:border-slate-800 p-2.5">
@@ -1138,7 +1145,7 @@ export default function ProductSetupWizard() {
   const [benchmarkSource, setBenchmarkSource] = useState<ExistingProduct | null>(null);
   const [benchmarkFieldKeys, setBenchmarkFieldKeys] = useState<Set<string>>(new Set());
   const [benchmarkPending, setBenchmarkPending] = useState<Set<string>>(new Set());
-  const [similarStylesCollapsed, setSimilarStylesCollapsed] = useState(false);
+  const [similarStylesCollapsed, setSimilarStylesCollapsed] = useState(() => typeof window !== "undefined" && window.innerWidth < 1024);
   const [suggestedBenchmark, setSuggestedBenchmark] = useState<ExistingProduct | null>(null);
   const [fieldErrors, setFieldErrors]       = useState<Record<string, string>>({});
   const [submitState, setSubmitState]       = useState<"idle" | "loading" | "success">("idle");
@@ -2063,15 +2070,15 @@ export default function ProductSetupWizard() {
               <>
                 <button
                   type="button"
-                  onClick={() => { setEntryStage("wizard"); setShowEditModal(true); }}
+                  onClick={() => navigate("/product-setup/manage")}
                   className="group text-left rounded-2xl border-2 border-amber-200 dark:border-amber-800/50 bg-white/80 dark:bg-slate-900/60 p-6 shadow-sm hover:border-amber-400 hover:shadow-md transition-all"
                 >
                   <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-900/30 text-amber-600 flex items-center justify-center mb-5">
                     <Pencil size={18} />
                   </div>
-                  <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100">Modify an Existing Style</h2>
-                  <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">Find and select an existing style to make changes.</p>
-                  <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-600 mt-6">Find a style <ChevronRight size={13} /></span>
+                  <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100">Manage Existing Styles</h2>
+                  <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">Select an existing style and choose a focused maintenance task.</p>
+                  <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-600 mt-6">Manage a style <ChevronRight size={13} /></span>
                 </button>
                 <button
                   type="button"
@@ -2180,7 +2187,7 @@ export default function ProductSetupWizard() {
             </div>
           </div>
         )}
-        <div className="mt-2 pb-20 flex items-start gap-4">
+        <div className="mt-2 pb-20 flex flex-col lg:flex-row items-stretch lg:items-start gap-4">
           <div className="min-w-0 flex-1">
             {isEditMode && editReasons.length > 0 && (
               <div className="mt-4 flex items-center gap-2 flex-wrap">
@@ -2243,7 +2250,6 @@ export default function ProductSetupWizard() {
               </div>
             )}
           </div>
-          </div>
           {!isEditMode && <SimilarStylesRail
             category={state.category}
             subCategory={state.subCategory}
@@ -2289,6 +2295,7 @@ export default function ProductSetupWizard() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      </div>
     </MainLayout>
   );
 }

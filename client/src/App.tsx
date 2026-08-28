@@ -27,6 +27,7 @@ import DetermineFacingsPresentation from "@/pages/rap/DetermineFacingsPresentati
 import NotFound from "@/pages/not-found";
 import PlaceholderPage from "@/pages/PlaceholderPage";
 import ProductSetupWizard from "@/pages/product-setup/ProductSetupWizard";
+import ManageExistingStyles from "@/pages/product-setup/ManageExistingStyles";
 import ProductSetupDrafts from "@/pages/product-setup/ProductSetupDrafts";
 import ProductSetupLegacyWizard from "@/pages/product-setup/ProductSetupLegacyWizard";
 import ProductSetupLegacyDrafts from "@/pages/product-setup/ProductSetupLegacyDrafts";
@@ -62,6 +63,7 @@ function Router() {
       <Route path="/reports/sip-planning-enhanced" component={SIPPlanningEnhanced} />
       <Route path="/reports/sip-planning-enhanced/create-po" component={CreatePOEnhanced} />
       <Route path="/product-setup/drafts" component={ProductSetupDrafts} />
+      <Route path="/product-setup/manage" component={ManageExistingStyles} />
       <Route path="/product-setup/edit/:styleCode" component={ProductSetupWizard} />
       <Route path="/product-setup/new" component={ProductSetupWizard} />
       <Route path="/product-setup" component={ProductSetupWizard} />
