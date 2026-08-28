@@ -916,11 +916,11 @@ function WizardProgress({
                 )}
               >
                 <span className={cn(
-                  "w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 border transition-all",
+                  "w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 border transition-all duration-200",
                   isCurrent
-                    ? "bg-primary text-white border-primary shadow-sm shadow-primary/20"
+                    ? "bg-primary text-white border-primary shadow-md shadow-primary/25 ring-2 ring-primary/15"
                     : isCompleted
-                    ? "bg-primary/10 text-primary border-primary/20"
+                    ? "bg-primary/10 text-primary border-primary/35"
                     : "bg-slate-50 dark:bg-slate-800 text-slate-400 border-slate-200 dark:border-slate-700",
                   !isReachable && "opacity-45"
                 )}>
@@ -928,17 +928,16 @@ function WizardProgress({
                 </span>
                 <span className={cn(
                   "hidden sm:block min-w-0 pr-2",
-                  isCurrent ? "text-primary" : isCompleted ? "text-slate-700 dark:text-slate-200" : "text-slate-400",
+                  isCurrent ? "text-primary font-semibold" : isCompleted ? "text-slate-700 dark:text-slate-200" : "text-slate-500 dark:text-slate-400",
                   !isReachable && "opacity-45"
                 )}>
                   <span className="block text-[10px] font-bold uppercase tracking-wide truncate">{wizardStep.label}</span>
-                  <span className="block text-[10px] text-slate-400 truncate mt-0.5">{isCurrent ? "In progress" : isCompleted ? "Complete" : "Upcoming"}</span>
                 </span>
               </button>
               {index < STEPS.length - 1 && (
                 <div className={cn(
-                  "h-px flex-1 mx-3 min-w-4",
-                  isCompleted ? "bg-primary/40" : "bg-slate-200 dark:bg-slate-700"
+                  "h-0.5 flex-1 mx-3 min-w-4 rounded-full",
+                  isCompleted ? "bg-primary/55" : "bg-slate-300 dark:bg-slate-700"
                 )} />
               )}
             </div>
@@ -988,6 +987,7 @@ export default function ProductSetupWizard() {
 
   const missing  = useMemo(() => getMissingFields(state), [state]);
   const isReady  = missing.length === 0;
+  const nextStepLabel = STEPS.find(wizardStep => wizardStep.id === step + 1)?.label;
   const visibleFields = useMemo(() => getVisibleFields(state), [state]);
 
   // Highlighted steps derived from chosen edit reasons
@@ -1783,7 +1783,7 @@ export default function ProductSetupWizard() {
           <div className="rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30 p-4">
             <div className="flex items-center gap-2 mb-3">
               <AlertTriangle size={14} className="text-amber-600" />
-              <p className="text-xs font-bold text-amber-700 dark:text-amber-400">{missing.length} Missing Field{missing.length !== 1 ? "s" : ""}</p>
+              <p className="text-xs font-bold text-amber-700 dark:text-amber-400">{missing.length} Required Field{missing.length !== 1 ? "s" : ""} Remaining</p>
             </div>
             <div className="flex flex-wrap gap-1.5">
               {missing.map(m => (
@@ -1937,11 +1937,6 @@ export default function ProductSetupWizard() {
                   </Badge>
                 )}
               </div>
-              <p className="text-sm text-slate-500 mt-0.5">
-                {isEditMode
-                  ? `Editing ${editedProduct?.description.slice(0, 48)}…`
-                  : "Create and configure new product styles and SKUs"}
-              </p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -1951,7 +1946,7 @@ export default function ProductSetupWizard() {
                   <Check size={11} /> {isEditMode ? "Ready to Save" : "Ready to Submit"}
                 </Badge>
               : <Badge className="gap-1 bg-amber-100 text-amber-700 border border-amber-200 font-semibold">
-                  <AlertCircle size={11} /> {missing.length} Missing Field{missing.length !== 1 ? "s" : ""}
+                  <AlertCircle size={11} /> {missing.length} Required Field{missing.length !== 1 ? "s" : ""}
                 </Badge>
             }
             {!isEditMode && (
@@ -1977,55 +1972,25 @@ export default function ProductSetupWizard() {
 
         {/* Horizontal journey with the existing wizard content below */}
         <WizardProgress currentStep={step} completedSteps={completedSteps} onStepClick={setStep} />
-        <div className="flex gap-6 items-start">
-          <div className="w-[220px] flex-shrink-0">
-            {/* Style summary card */}
-            <StyleInfoCard
-              isEditMode={isEditMode}
-              styleCode={styleCode}
-              state={state}
-            />
-
-            {/* Edit reasons chips */}
+        <div className="pb-20">
+          <div className="min-w-0">
             {isEditMode && editReasons.length > 0 && (
-              <div className="mt-3 space-y-1.5">
-                <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider px-1">Updating</p>
-                <div className="flex flex-wrap gap-1">
-                  {editReasons.map(rid => {
-                    const r = EDIT_REASONS.find(x => x.id === rid)!;
-                    return (
-                      <span key={rid} className={cn(
-                        "inline-flex items-center gap-1 text-[9px] font-semibold px-1.5 py-0.5 rounded-lg border",
-                        r.bg, r.color, r.border
-                      )}>
-                        <r.Icon size={8} />
-                        {r.label.split(" ").slice(0, 2).join(" ")}
-                      </span>
-                    );
-                  })}
-                </div>
+              <div className="mt-4 flex items-center gap-2 flex-wrap">
+                <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">Updating</p>
+                {editReasons.map(rid => {
+                  const r = EDIT_REASONS.find(x => x.id === rid)!;
+                  return (
+                    <span key={rid} className={cn(
+                      "inline-flex items-center gap-1 text-[9px] font-semibold px-1.5 py-0.5 rounded-lg border",
+                      r.bg, r.color, r.border
+                    )}>
+                      <r.Icon size={8} />
+                      {r.label.split(" ").slice(0, 2).join(" ")}
+                    </span>
+                  );
+                })}
               </div>
             )}
-
-            {/* Persistent style shortcuts */}
-            <div className="mt-4 space-y-1.5">
-              <button
-                onClick={() => setShowCopyModal(true)}
-                className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold text-primary border border-dashed border-primary/30 hover:bg-primary/5 transition-colors"
-              >
-                <Copy size={12} /> Copy Existing Style
-              </button>
-              <button
-                onClick={() => setShowEditModal(true)}
-                className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold text-amber-600 border border-dashed border-amber-400/40 hover:bg-amber-50 dark:hover:bg-amber-950/20 transition-colors"
-              >
-                <Pencil size={12} /> Edit Existing Style
-              </button>
-            </div>
-          </div>
-
-          {/* Main content */}
-          <div className="flex-1 min-w-0">
             {isEditMode && (
               <ProductSetupEnhancements
                 styleCode={styleCode}
@@ -2043,8 +2008,8 @@ export default function ProductSetupWizard() {
 
             {/* Persistent navigation */}
             {submitState !== "success" && (
-              <div className="sticky bottom-0 z-10 -mx-1 mt-8 border-t border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-950/95 backdrop-blur-sm py-3 px-1">
-                <div className="flex items-center justify-between gap-3">
+              <div className="fixed left-[260px] right-0 bottom-0 z-30 border-t border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-950/95 backdrop-blur-sm py-3 px-6">
+                <div className="flex items-center justify-between gap-3 max-w-[1600px] mx-auto">
                   <Button variant="outline" size="sm" onClick={goPrev} disabled={step === 1} className="gap-1.5 text-xs">
                     <ChevronLeft size={13} /> Back
                   </Button>
@@ -2054,7 +2019,7 @@ export default function ProductSetupWizard() {
                     </Button>
                     {step < 7
                       ? <Button size="sm" onClick={goNext} className="gap-1.5 text-xs min-w-[110px]">
-                          Next Step <ChevronRight size={13} />
+                          Next: {nextStepLabel} <ChevronRight size={13} />
                         </Button>
                       : <Button size="sm" onClick={handleSubmit} disabled={!isReady || submitState === "loading"} className="gap-1.5 text-xs min-w-[120px]">
                           {submitState === "loading"
