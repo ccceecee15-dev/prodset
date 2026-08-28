@@ -15,7 +15,7 @@ import {
   ChevronRight, ChevronLeft, Save, Send, AlertCircle, Check,
   Search, X, Plus, Minus, Sparkles, Copy, ChevronDown,
   AlertTriangle, Info, Loader2, PartyPopper, FileText,
-  Cpu, Wine, Leaf, Shirt, Pencil, ArrowLeft, FileImage, PackagePlus,
+  Cpu, Wine, Leaf, Shirt, Pencil, ArrowLeft, FileImage,
   DollarSign, ShieldCheck, RefreshCcw,
 } from "lucide-react";
 import {
@@ -25,12 +25,12 @@ import {
   validateUPC, validateRange,
   getProductSetupAssets, getExistingProduct, registerMockCreatedProduct, saveMockProductImages,
   type FieldConfig, type ExistingProduct, type HierarchyLeaf, type InnerPack, type PLCStatus, type ProductImage,
-} from "./productSetupData";
-import ProductSetupEnhancements, { ProductImagesSection } from "./ProductSetupEnhancements";
+} from "./productSetupLegacyData";
+import ProductSetupEnhancements, { ProductImagesSection } from "./ProductSetupLegacyEnhancements";
 import {
   upsertDraft, loadDrafts, getAndClearResumedDraftId,
   type StoredDraft,
-} from "./draftStorage";
+} from "./productSetupLegacyDraftStorage";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface WizardState {
@@ -888,74 +888,12 @@ function HierarchyCascade({
   );
 }
 
-function WizardProgress({
-  currentStep, completedSteps, onStepClick,
-}: {
-  currentStep: number;
-  completedSteps: Set<number>;
-  onStepClick: (step: number) => void;
-}) {
-  return (
-    <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/60 backdrop-blur-sm shadow-sm px-4 py-3 overflow-x-auto">
-      <div className="flex min-w-[720px] items-center">
-        {STEPS.map((wizardStep, index) => {
-          const Icon = STEP_ICONS[index];
-          const isCurrent = currentStep === wizardStep.id;
-          const isCompleted = completedSteps.has(wizardStep.id);
-          const isReachable = wizardStep.id <= currentStep + 1;
-
-          return (
-            <div key={wizardStep.id} className="flex items-center flex-1 last:flex-none">
-              <button
-                type="button"
-                onClick={() => isReachable && onStepClick(wizardStep.id)}
-                disabled={!isReachable}
-                className={cn(
-                  "flex items-center gap-2 text-left group min-w-0",
-                  !isReachable && "cursor-not-allowed"
-                )}
-              >
-                <span className={cn(
-                  "w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 border transition-all",
-                  isCurrent
-                    ? "bg-primary text-white border-primary shadow-sm shadow-primary/20"
-                    : isCompleted
-                    ? "bg-primary/10 text-primary border-primary/20"
-                    : "bg-slate-50 dark:bg-slate-800 text-slate-400 border-slate-200 dark:border-slate-700",
-                  !isReachable && "opacity-45"
-                )}>
-                  {isCompleted && !isCurrent ? <Check size={14} /> : <Icon size={14} />}
-                </span>
-                <span className={cn(
-                  "hidden sm:block min-w-0 pr-2",
-                  isCurrent ? "text-primary" : isCompleted ? "text-slate-700 dark:text-slate-200" : "text-slate-400",
-                  !isReachable && "opacity-45"
-                )}>
-                  <span className="block text-[10px] font-bold uppercase tracking-wide truncate">{wizardStep.label}</span>
-                  <span className="block text-[10px] text-slate-400 truncate mt-0.5">{isCurrent ? "In progress" : isCompleted ? "Complete" : "Upcoming"}</span>
-                </span>
-              </button>
-              {index < STEPS.length - 1 && (
-                <div className={cn(
-                  "h-px flex-1 mx-3 min-w-4",
-                  isCompleted ? "bg-primary/40" : "bg-slate-200 dark:bg-slate-700"
-                )} />
-              )}
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
 const ALL_STEPS_DONE = new Set([1, 2, 3, 4, 5, 6, 7]);
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function ProductSetupWizard() {
   const [, navigate] = useLocation();
-  const [, editRouteParams] = useRoute("/product-setup/edit/:styleCode");
-  const [, newRouteMatch] = useRoute("/product-setup/new");
+  const [, editRouteParams] = useRoute("/product-setup-legacy/edit/:styleCode");
 
   // ── Edit mode (state-driven, activated by "Edit Existing Style" modal) ──
   const [editedProduct, setEditedProduct]   = useState<ExistingProduct | null>(null);
@@ -968,9 +906,6 @@ export default function ProductSetupWizard() {
   const styleCode = isEditMode && editedProduct ? editedProduct.styleCode : generatedStyleCode;
 
   const [step, setStep]     = useState(1);
-  const [entryStage, setEntryStage] = useState<"choice" | "new-choice" | "wizard">(
-    editRouteParams || newRouteMatch ? "wizard" : "choice"
-  );
   const [state, setState]   = useState<WizardState>(EMPTY_STATE);
   const [skus, setSkus]     = useState<SKURow[]>([]);
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
@@ -1286,7 +1221,7 @@ export default function ProductSetupWizard() {
       {recentDrafts.length > 0 && (
         <SectionCard title="Recent Drafts" badge={
           <button
-            onClick={() => navigate("/product-setup/drafts")}
+            onClick={() => navigate("/product-setup-legacy/drafts")}
             className="text-[10px] text-primary hover:underline flex items-center gap-0.5"
           >
             View all <ChevronRight size={10} />
@@ -1821,96 +1756,6 @@ export default function ProductSetupWizard() {
 
   const stepRenderers = [renderStep1, renderStep2, renderStep3, renderStep4, renderStep5, renderStep6, renderStep7];
 
-  const renderEntryStage = () => {
-    const isNewChoice = entryStage === "new-choice";
-    return (
-      <MainLayout>
-        <div className="max-w-4xl mx-auto py-4 sm:py-10 animate-in fade-in slide-in-from-bottom-2 duration-300">
-          <div className="text-center mb-8">
-            <div className="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mx-auto mb-4">
-              {isNewChoice ? <PackagePlus size={22} /> : <Package size={22} />}
-            </div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-primary mb-2">Product Setup</p>
-            <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
-              {isNewChoice ? "How would you like to start?" : "What would you like to do?"}
-            </h1>
-            <p className="text-sm text-slate-500 mt-2">
-              {isNewChoice ? "Choose a starting point for your new style." : "Choose the product setup journey that fits your task."}
-            </p>
-          </div>
-
-          <div className="grid sm:grid-cols-2 gap-4">
-            {isNewChoice ? (
-              <>
-                <button
-                  type="button"
-                  onClick={() => setEntryStage("wizard")}
-                  className="group text-left rounded-2xl border-2 border-primary/20 bg-white/80 dark:bg-slate-900/60 p-6 shadow-sm hover:border-primary hover:shadow-md transition-all"
-                >
-                  <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center mb-5 group-hover:bg-primary group-hover:text-white transition-colors">
-                    <Plus size={18} />
-                  </div>
-                  <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100">Start From Scratch</h2>
-                  <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">Create a completely new style.</p>
-                  <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary mt-6">Begin setup <ChevronRight size={13} /></span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { setEntryStage("wizard"); setShowCopyModal(true); }}
-                  className="group text-left rounded-2xl border-2 border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-900/60 p-6 shadow-sm hover:border-primary/50 hover:shadow-md transition-all"
-                >
-                  <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 flex items-center justify-center mb-5 group-hover:bg-primary/10 group-hover:text-primary transition-colors">
-                    <Copy size={18} />
-                  </div>
-                  <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100">Copy an Existing Style</h2>
-                  <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">Select an existing style and use it as the starting point for a new style.</p>
-                  <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary mt-6">Choose a style <ChevronRight size={13} /></span>
-                </button>
-              </>
-            ) : (
-              <>
-                <button
-                  type="button"
-                  onClick={() => { setEntryStage("wizard"); setShowEditModal(true); }}
-                  className="group text-left rounded-2xl border-2 border-amber-200 dark:border-amber-800/50 bg-white/80 dark:bg-slate-900/60 p-6 shadow-sm hover:border-amber-400 hover:shadow-md transition-all"
-                >
-                  <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-900/30 text-amber-600 flex items-center justify-center mb-5">
-                    <Pencil size={18} />
-                  </div>
-                  <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100">Modify an Existing Style</h2>
-                  <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">Find and select an existing style to make changes.</p>
-                  <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-600 mt-6">Find a style <ChevronRight size={13} /></span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setEntryStage("new-choice")}
-                  className="group text-left rounded-2xl border-2 border-primary/20 bg-white/80 dark:bg-slate-900/60 p-6 shadow-sm hover:border-primary hover:shadow-md transition-all"
-                >
-                  <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center mb-5 group-hover:bg-primary group-hover:text-white transition-colors">
-                    <PackagePlus size={18} />
-                  </div>
-                  <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100">Start a New Style</h2>
-                  <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">Begin creating a new style.</p>
-                  <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary mt-6">Continue <ChevronRight size={13} /></span>
-                </button>
-              </>
-            )}
-          </div>
-
-          {isNewChoice && (
-            <Button variant="ghost" size="sm" className="flex mx-auto mt-6 gap-1.5 text-xs text-slate-500" onClick={() => setEntryStage("choice")}>
-              <ChevronLeft size={13} /> Back
-            </Button>
-          )}
-        </div>
-        {showCopyModal && <StyleSearchModal mode="copy" onClose={() => { setShowCopyModal(false); setEntryStage("new-choice"); }} onSelect={handleCopyStyle} />}
-        {showEditModal && <StyleSearchModal mode="edit" onClose={() => { setShowEditModal(false); setEntryStage("choice"); }} onSelect={handleEditStyle} />}
-      </MainLayout>
-    );
-  };
-
-  if (entryStage !== "wizard") return renderEntryStage();
-
   return (
     <MainLayout>
       <div className="animate-in fade-in duration-300">
@@ -1962,7 +1807,7 @@ export default function ProductSetupWizard() {
                 <Button
                   variant="outline" size="sm"
                   className="gap-1.5 text-xs text-slate-500 border-dashed"
-                  onClick={() => navigate("/product-setup/drafts")}
+                  onClick={() => navigate("/product-setup-legacy/drafts")}
                 >
                   <FileText size={13} />
                   {recentDrafts.length > 0 ? `${recentDrafts.length} Draft${recentDrafts.length !== 1 ? "s" : ""}` : "Drafts"}
@@ -1975,8 +1820,7 @@ export default function ProductSetupWizard() {
           </div>
         </div>
 
-        {/* Horizontal journey with the existing wizard content below */}
-        <WizardProgress currentStep={step} completedSteps={completedSteps} onStepClick={setStep} />
+        {/* Two-column layout: wizard nav + content */}
         <div className="flex gap-6 items-start">
           <div className="w-[220px] flex-shrink-0">
             {/* Style summary card */}
@@ -1984,6 +1828,15 @@ export default function ProductSetupWizard() {
               isEditMode={isEditMode}
               styleCode={styleCode}
               state={state}
+            />
+
+            {/* Step navigation */}
+            <WizardSidebar
+              currentStep={step}
+              completedSteps={completedSteps}
+              invalidSteps={new Set()}
+              highlightedSteps={highlightedSteps}
+              onStepClick={setStep}
             />
 
             {/* Edit reasons chips */}
@@ -2041,32 +1894,26 @@ export default function ProductSetupWizard() {
             )}
             {stepRenderers[step - 1]?.()}
 
-            {/* Persistent navigation */}
+            {/* Navigation buttons */}
             {submitState !== "success" && (
-              <div className="sticky bottom-0 z-10 -mx-1 mt-8 border-t border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-950/95 backdrop-blur-sm py-3 px-1">
-                <div className="flex items-center justify-between gap-3">
-                  <Button variant="outline" size="sm" onClick={goPrev} disabled={step === 1} className="gap-1.5 text-xs">
-                    <ChevronLeft size={13} /> Back
-                  </Button>
-                  <div className="flex items-center gap-2">
-                    <Button variant="ghost" size="sm" onClick={saveDraft} className="gap-1.5 text-xs text-slate-600 dark:text-slate-300">
-                      <Save size={13} /> Save Progress
+              <div className="flex items-center justify-between mt-6 pt-5 border-t border-slate-100 dark:border-slate-800">
+                <Button variant="outline" size="sm" onClick={goPrev} disabled={step === 1} className="gap-1.5 text-xs">
+                  <ChevronLeft size={13} /> Previous
+                </Button>
+                <span className="text-[11px] text-slate-400">Step {step} of {STEPS.length}</span>
+                {step < 7
+                  ? <Button size="sm" onClick={goNext} className="gap-1.5 text-xs">
+                      Next <ChevronRight size={13} />
                     </Button>
-                    {step < 7
-                      ? <Button size="sm" onClick={goNext} className="gap-1.5 text-xs min-w-[110px]">
-                          Next Step <ChevronRight size={13} />
-                        </Button>
-                      : <Button size="sm" onClick={handleSubmit} disabled={!isReady || submitState === "loading"} className="gap-1.5 text-xs min-w-[120px]">
-                          {submitState === "loading"
-                            ? <><Loader2 size={13} className="animate-spin" /> {isEditMode ? "Saving…" : "Submitting…"}</>
-                            : isEditMode
-                            ? <><Pencil size={13} /> Save Changes</>
-                            : <><Send size={13} /> Submit</>
-                          }
-                        </Button>
-                    }
-                  </div>
-                </div>
+                  : <Button size="sm" onClick={handleSubmit} disabled={!isReady || submitState === "loading"} className="gap-1.5 text-xs">
+                      {submitState === "loading"
+                        ? <><Loader2 size={13} className="animate-spin" /> {isEditMode ? "Saving…" : "Submitting…"}</>
+                        : isEditMode
+                        ? <><Pencil size={13} /> Save Changes</>
+                        : <><Send size={13} /> Submit</>
+                      }
+                    </Button>
+                }
               </div>
             )}
           </div>

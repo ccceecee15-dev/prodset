@@ -24,7 +24,7 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "cd sip7/sip6/sip5/sip4 && npm run dev"
+args = "npm run dev"
 waitForPort = 5000
 
 [workflows.workflow.metadata]
@@ -36,5 +36,5 @@ externalPort = 80
 
 [deployment]
 deploymentTarget = "autoscale"
-run = ["bash", "-c", "cd sip7/sip6/sip5/sip4 && node dist/index.js"]
-build = ["bash", "-c", "cd sip7/sip6/sip5/sip4 && npm run build"]
+run = ["bash", "-c", "node dist/index.js"]
+build = ["bash", "-c", "npm run build"]
