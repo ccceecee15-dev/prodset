@@ -1045,6 +1045,57 @@ const BENCHMARK_FIELDS = [
   "selectedColors", "selectedSizes",
 ];
 
+const SIMILAR_STYLES = [
+  { styleCode: "STYLE-48291", description: "Sony WH-1000XM5 Headphones", category: "TECH", subCategory: "Audio", merchArea: "Headphones", planningGroup: "Noise Cancelling", brand: "SONY", country: "Japan", colourway: "Midnight Black", size: "One Size" },
+  { styleCode: "STYLE-39172", description: "Sony WH-1000XM4 Headphones", category: "TECH", subCategory: "Audio", merchArea: "Headphones", planningGroup: "Noise Cancelling", brand: "SONY", country: "Japan", colourway: "Black", size: "One Size" },
+  { styleCode: "STYLE-27418", description: "Apple AirPods Pro Gen 3", category: "TECH", subCategory: "Audio", merchArea: "Earbuds", planningGroup: "True Wireless", brand: "APPLE", country: "China", colourway: "White", size: "One Size" },
+  { styleCode: "STYLE-55021", description: "JBL Live 660NC Headphones", category: "TECH", subCategory: "Audio", merchArea: "Headphones", planningGroup: "Noise Cancelling", brand: "JBL", country: "China", colourway: "Blue", size: "One Size" },
+];
+
+function SimilarStylesRail({ category, subCategory, merchArea, planningGroup, benchmarkSource, collapsed, onToggle, onUseBenchmark }: {
+  category: string; subCategory: string; merchArea: string; planningGroup: string; benchmarkSource: ExistingProduct | null;
+  collapsed: boolean; onToggle: () => void; onUseBenchmark: (style: ExistingProduct) => void;
+}) {
+  const hierarchyDepth = [category, subCategory, merchArea, planningGroup].filter(Boolean).length;
+  const matches = SIMILAR_STYLES.filter(style =>
+    style.category === category &&
+    (!subCategory || style.subCategory === subCategory) &&
+    (!merchArea || style.merchArea === merchArea) &&
+    (!planningGroup || style.planningGroup === planningGroup)
+  ).slice(0, hierarchyDepth >= 3 ? 3 : 4);
+  const toProduct = (style: typeof SIMILAR_STYLES[number]): ExistingProduct => ({
+    styleCode: style.styleCode, description: style.description, category: style.category, subCategory: style.subCategory,
+    vendor: style.brand === "SONY" ? "SONY ELECTRONICS INC." : style.brand === "APPLE" ? "INGRAM MICRO, INC." : "JBL AUSTRALIA",
+    brand: style.brand, buyer: "Sarah Chen", retail: 299.99,
+    hierarchy: { category: style.category, subCategory: style.subCategory, merchArea: style.merchArea, planningGroup: style.planningGroup, subGroup: "" },
+    logistics: { leadTime: 14, orderMultiple: 6, distributionMultiple: 12, weight: 0.25, cartonQty: 12 },
+    planning: { replenishable: true }, skuVariants: { colors: [style.colourway], sizes: [style.size] },
+  });
+  return (
+    <aside className={cn("flex-shrink-0 transition-all", collapsed ? "w-10" : "w-[280px]")}>
+      <div className="sticky top-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/60 shadow-sm overflow-hidden">
+        <button type="button" onClick={onToggle} className="w-full flex items-center justify-between px-3 py-3 text-left">
+          {!collapsed && <span><span className="block text-xs font-bold text-slate-700 dark:text-slate-200">Similar Styles</span><span className="block text-[10px] text-slate-400 mt-0.5">Based on your current hierarchy</span></span>}
+          <ChevronRight size={14} className={cn("text-slate-400 transition-transform", !collapsed && "rotate-180")} />
+        </button>
+        {!collapsed && (
+          <div className="border-t border-slate-100 dark:border-slate-800 p-3 space-y-2.5">
+            {hierarchyDepth === 0 ? <div className="py-5 text-center"><p className="text-xs font-semibold text-slate-600 dark:text-slate-300">Similar styles will appear here</p><p className="text-[10px] text-slate-400 mt-1 leading-relaxed">Make your hierarchy selections to see relevant styles you can use as a benchmark.</p></div> : matches.length === 0 ? <p className="py-5 text-center text-[10px] text-slate-400">No similar styles found for this hierarchy.</p> : matches.map(style => {
+              const selected = benchmarkSource?.styleCode === style.styleCode;
+              return <div key={style.styleCode} className="rounded-lg border border-slate-100 dark:border-slate-800 p-2.5">
+                <p className="font-mono text-[10px] text-primary">{style.styleCode}</p><p className="text-[11px] font-semibold text-slate-700 dark:text-slate-200 mt-0.5">{style.description}</p>
+                <p className="text-[10px] text-slate-400 mt-1">{style.brand} · {style.subCategory} · {style.merchArea}</p>
+                <p className="text-[10px] text-slate-500 mt-1">Brand: {style.brand} · Country: {style.country}</p><p className="text-[10px] text-slate-500">Colourway: {style.colourway} · Size: {style.size}</p>
+                <Button size="sm" variant={selected ? "secondary" : "outline"} disabled={selected} onClick={() => onUseBenchmark(toProduct(style))} className="w-full h-7 mt-2 text-[10px] gap-1"><GitBranch size={10} />{selected ? "Active Benchmark" : "Use as Benchmark"}</Button>
+              </div>;
+            })}
+          </div>
+        )}
+      </div>
+    </aside>
+  );
+}
+
 function BenchmarkSectionSummary({ pending, total, onApproveAll }: { pending: number; total: number; onApproveAll: () => void }) {
   if (!total) return null;
   return (
@@ -1087,6 +1138,8 @@ export default function ProductSetupWizard() {
   const [benchmarkSource, setBenchmarkSource] = useState<ExistingProduct | null>(null);
   const [benchmarkFieldKeys, setBenchmarkFieldKeys] = useState<Set<string>>(new Set());
   const [benchmarkPending, setBenchmarkPending] = useState<Set<string>>(new Set());
+  const [similarStylesCollapsed, setSimilarStylesCollapsed] = useState(false);
+  const [suggestedBenchmark, setSuggestedBenchmark] = useState<ExistingProduct | null>(null);
   const [fieldErrors, setFieldErrors]       = useState<Record<string, string>>({});
   const [submitState, setSubmitState]       = useState<"idle" | "loading" | "success">("idle");
   const [plcStatus, setPlcStatus]           = useState<PLCStatus>("Current");
@@ -1173,18 +1226,38 @@ export default function ProductSetupWizard() {
   });
 
   const handleBenchmarkStyle = (product: ExistingProduct) => {
-    setBenchmarkSource(product);
-    setState(benchmarkStateFromProduct(product));
-    setVendorSearch(product.vendor);
+    const enteringWizard = entryStage !== "wizard";
     const seededState = benchmarkStateFromProduct(product);
+    const empty = (value: any) => value === "" || value === undefined || value === null || (Array.isArray(value) && value.length === 0);
+    const nextState = { ...state };
+    const addedKeys: string[] = [];
+    BENCHMARK_FIELDS.forEach(key => {
+      if (empty(nextState[key as keyof WizardState]) && !empty(seededState[key as keyof WizardState])) {
+        (nextState as any)[key] = seededState[key as keyof WizardState];
+        addedKeys.push(key);
+      }
+    });
+    Object.entries(seededState.dynamicFields).forEach(([key, value]) => {
+      if (empty(nextState.dynamicFields[key]) && !empty(value)) {
+        nextState.dynamicFields = { ...nextState.dynamicFields, [key]: value };
+        addedKeys.push(`dynamic.${key}`);
+      }
+    });
+    setBenchmarkSource(product);
+    setState(nextState);
+    if (nextState.vendor) setVendorSearch(nextState.vendor);
     const dynamicKeys = Object.keys(seededState.dynamicFields).map(key => `dynamic.${key}`);
-    setBenchmarkFieldKeys(new Set([...BENCHMARK_FIELDS, ...dynamicKeys]));
-    setBenchmarkPending(new Set([...BENCHMARK_FIELDS, ...dynamicKeys]));
-    setCompletedSteps(new Set());
-    setStep(1);
-    setEntryStage("wizard");
-    setShowCopyModal(false);
+    setBenchmarkFieldKeys(prev => new Set([...prev, ...addedKeys]));
+    setBenchmarkPending(prev => new Set([...prev, ...addedKeys]));
+    if (enteringWizard) {
+      setEntryStage("wizard");
+      setStep(1);
+      setShowCopyModal(false);
+    }
+    setSuggestedBenchmark(null);
   };
+
+  const requestSuggestedBenchmark = (product: ExistingProduct) => setSuggestedBenchmark(product);
 
   const markCompleted = (s: number) => setCompletedSteps(prev => new Set(Array.from(prev).concat(s)));
 
@@ -2099,13 +2172,16 @@ export default function ProductSetupWizard() {
                 Benchmarking from <span className="font-mono font-semibold text-slate-800 dark:text-slate-100">{benchmarkSource.styleCode}</span> · {benchmarkSource.description}
               </p>
             </div>
-            <span className="text-[10px] text-primary font-semibold flex-shrink-0">
-              {benchmarkPending.size} remaining review{benchmarkPending.size !== 1 ? "s" : ""}
-            </span>
+            <div className="flex items-center gap-3 flex-shrink-0">
+              <span className="text-[10px] text-primary font-semibold">
+                {benchmarkPending.size} remaining review{benchmarkPending.size !== 1 ? "s" : ""}
+              </span>
+              <button type="button" onClick={() => setShowCopyModal(true)} className="text-[10px] font-semibold text-primary hover:underline">Change</button>
+            </div>
           </div>
         )}
-        <div className="mt-2 pb-20">
-          <div className="min-w-0">
+        <div className="mt-2 pb-20 flex items-start gap-4">
+          <div className="min-w-0 flex-1">
             {isEditMode && editReasons.length > 0 && (
               <div className="mt-4 flex items-center gap-2 flex-wrap">
                 <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">Updating</p>
@@ -2167,10 +2243,38 @@ export default function ProductSetupWizard() {
               </div>
             )}
           </div>
+          </div>
+          {!isEditMode && <SimilarStylesRail
+            category={state.category}
+            subCategory={state.subCategory}
+            merchArea={state.merchArea}
+            planningGroup={state.planningGroup}
+            benchmarkSource={benchmarkSource}
+            collapsed={similarStylesCollapsed}
+            onToggle={() => setSimilarStylesCollapsed(value => !value)}
+            onUseBenchmark={requestSuggestedBenchmark}
+          />}
         </div>
-      </div>
 
+      {showCopyModal && <StyleSearchModal mode="benchmark" onClose={() => setShowCopyModal(false)} onSelect={handleBenchmarkStyle} />}
       {showEditModal && <StyleSearchModal mode="edit" onClose={() => setShowEditModal(false)} onSelect={handleEditStyle} />}
+      <AlertDialog open={!!suggestedBenchmark} onOpenChange={open => !open && setSuggestedBenchmark(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Use this style as your benchmark?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Applicable empty fields will be populated from this style. Existing values you&apos;ve entered will not be changed.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {suggestedBenchmark && <div className="rounded-lg border border-primary/15 bg-primary/5 px-3 py-2 text-xs text-slate-600 dark:text-slate-300">
+            <span className="font-mono font-semibold text-primary">{suggestedBenchmark.styleCode}</span> · {suggestedBenchmark.description}
+          </div>}
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => suggestedBenchmark && handleBenchmarkStyle(suggestedBenchmark)}>Use as Benchmark</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       <AlertDialog open={showIncompleteSaveDialog} onOpenChange={setShowIncompleteSaveDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
