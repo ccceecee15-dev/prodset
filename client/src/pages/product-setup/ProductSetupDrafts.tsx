@@ -121,11 +121,11 @@ export default function ProductSetupDrafts() {
                 <ArrowLeft className="h-4 w-4" />
               </Button>
               <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
-                Draft Management
+                Incomplete Setups
               </h1>
             </div>
             <p className="text-sm text-slate-500">
-              Resume saved product drafts or clean up incomplete setups
+              Resume incomplete product setups or clean up saved progress
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -157,7 +157,7 @@ export default function ProductSetupDrafts() {
             <div className="flex items-center gap-3">
               <FileText className="h-4 w-4 text-primary" />
               <div>
-                <CardTitle className="text-sm font-bold">Saved Drafts</CardTitle>
+                <CardTitle className="text-sm font-bold">Incomplete Setups</CardTitle>
                 <p className="text-[10px] text-slate-500 mt-0.5">
                   {drafts.filter(d => d.completedSteps >= d.totalSteps).length} ready to submit
                   &nbsp;·&nbsp;
@@ -172,7 +172,7 @@ export default function ProductSetupDrafts() {
                 <Input
                   value={search}
                   onChange={e => setSearch(e.target.value)}
-                  placeholder="Search drafts…"
+                  placeholder="Search incomplete setups…"
                   className="pl-8 h-8 text-xs w-[220px]"
                 />
               </div>
@@ -234,12 +234,12 @@ export default function ProductSetupDrafts() {
                           </div>
                           <div>
                             <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                              {search ? "No drafts match your search" : "No drafts saved yet"}
+                              {search ? "No incomplete setups match your search" : "No incomplete setups saved yet"}
                             </p>
                             <p className="text-xs text-slate-400 mt-0.5">
                               {search
                                 ? "Try different keywords"
-                                : "Start a new product and hit Save Draft to store your progress"}
+                                : "Start a new product and save your progress to return later"}
                             </p>
                           </div>
                           {!search && (
@@ -283,7 +283,7 @@ export default function ProductSetupDrafts() {
                           {/* Product */}
                           <TableCell className="px-4 py-3.5 max-w-[240px]">
                             <p className="text-xs font-semibold text-slate-800 dark:text-slate-100 truncate">
-                              {draft.label || <span className="italic text-slate-400">Untitled Draft</span>}
+                              {draft.label || <span className="italic text-slate-400">Untitled Setup</span>}
                             </p>
                           </TableCell>
 
@@ -398,9 +398,9 @@ export default function ProductSetupDrafts() {
                 <Trash2 size={18} className="text-red-500" />
               </div>
               <div>
-                <p className="font-bold text-slate-900 dark:text-slate-100">Delete all drafts?</p>
+                <p className="font-bold text-slate-900 dark:text-slate-100">Delete all incomplete setups?</p>
                 <p className="text-xs text-slate-500">
-                  This will permanently remove all {drafts.length} saved draft{drafts.length !== 1 ? "s" : ""}.
+                  This will permanently remove all {drafts.length} saved incomplete setup{drafts.length !== 1 ? "s" : ""}.
                 </p>
               </div>
             </div>

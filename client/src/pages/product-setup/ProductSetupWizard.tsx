@@ -8,6 +8,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 import { useLocation, useRoute } from "wouter";
 import {
@@ -470,16 +474,32 @@ function SectionCard({ title, children, badge }: { title: string; children: Reac
   );
 }
 
-function FieldRow({ label, required, helper, error, children }: {
+function FieldRow({ label, required, helper, error, children, benchmarked, benchmarkSource, reviewed, onApprove }: {
   label: string; required?: boolean; helper?: string; error?: string; children: React.ReactNode;
+  benchmarked?: boolean; benchmarkSource?: string; reviewed?: boolean; onApprove?: () => void;
 }) {
   return (
     <div>
-      <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1.5">
-        {label}
-        {required && <span className="text-red-500 ml-0.5">*</span>}
-      </label>
+      <div className="flex items-center justify-between gap-2 mb-1.5">
+        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300">
+          {label}
+          {required && <span className="text-red-500 ml-0.5">*</span>}
+        </label>
+        {benchmarked && (
+          <button type="button" onClick={onApprove} className={cn(
+            "inline-flex items-center gap-1 text-[10px] font-medium transition-colors",
+            reviewed ? "text-slate-400" : "text-primary hover:text-primary/80"
+          )} title={reviewed ? "Benchmark value reviewed" : "Approve benchmark value"}>
+            <span className="w-1.5 h-1.5 rounded-full bg-primary/50" />
+            {reviewed ? "Benchmarked" : "Benchmarked · Review"}
+            {reviewed ? <Check size={10} /> : <Check size={10} />}
+          </button>
+        )}
+      </div>
       {children}
+      {benchmarked && !reviewed && benchmarkSource && (
+        <p className="text-[10px] text-primary/70 mt-1">Benchmarked from {benchmarkSource}</p>
+      )}
       {error  && <p className="text-[11px] text-red-500 mt-1 flex items-center gap-1"><AlertCircle size={10} />{error}</p>}
       {helper && !error && <p className="text-[11px] text-slate-400 mt-1">{helper}</p>}
     </div>
@@ -490,7 +510,7 @@ function FieldRow({ label, required, helper, error, children }: {
 function StyleSearchModal({
   mode, onClose, onSelect,
 }: {
-  mode: "copy" | "edit";
+  mode: "copy" | "edit" | "benchmark";
   onClose: () => void;
   onSelect: (p: ExistingProduct, reasons?: EditReason[]) => void;
 }) {
@@ -508,11 +528,16 @@ function StyleSearchModal({
   });
 
   const isCopy = mode === "copy";
+  const isBenchmark = mode === "benchmark";
 
   const handleProductSelect = (p: ExistingProduct) => {
     if (isCopy) { onSelect(p); return; }
     setChosenProduct(p);
     setModalStep(2);
+  };
+
+  const handleConfirmBenchmark = () => {
+    if (chosenProduct) onSelect(chosenProduct);
   };
 
   const toggleReason = (id: EditReason) => {
@@ -546,17 +571,17 @@ function StyleSearchModal({
             )}
             <div className={cn(
               "w-8 h-8 rounded-lg flex items-center justify-center",
-              isCopy ? "bg-primary/10" : "bg-amber-100 dark:bg-amber-900/30"
+                isCopy || isBenchmark ? "bg-primary/10" : "bg-amber-100 dark:bg-amber-900/30"
             )}>
-              {isCopy ? <Copy size={14} className="text-primary" /> : <Pencil size={14} className="text-amber-600" />}
+              {isCopy ? <Copy size={14} className="text-primary" /> : isBenchmark ? <GitBranch size={14} className="text-primary" /> : <Pencil size={14} className="text-amber-600" />}
             </div>
             <div>
               <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">
-                {isCopy ? "Copy Existing Style" : "Edit Existing Style"}
+                {isCopy ? "Copy Existing Style" : isBenchmark ? "Benchmark Existing Style" : "Edit Existing Style"}
               </h2>
               <p className="text-xs text-slate-500 mt-0.5">
-                {isCopy
-                  ? "Select a style to prefill the wizard as a new product"
+                {isCopy || isBenchmark
+                  ? isBenchmark ? "Select a style to use as a reference for a new product" : "Select a style to prefill the wizard as a new product"
                   : modalStep === 1
                   ? "Step 1 of 2 — Select the style you want to edit"
                   : "Step 2 of 2 — What are you updating?"}
@@ -603,18 +628,18 @@ function StyleSearchModal({
                   onClick={() => handleProductSelect(p)}
                   className={cn(
                     "w-full flex items-start gap-4 px-6 py-4 text-left transition-colors group",
-                    isCopy ? "hover:bg-primary/5" : "hover:bg-amber-50 dark:hover:bg-amber-950/20"
+                    isCopy || isBenchmark ? "hover:bg-primary/5" : "hover:bg-amber-50 dark:hover:bg-amber-950/20"
                   )}
                 >
                   <div className={cn(
                     "w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors",
-                    isCopy
+                    isCopy || isBenchmark
                       ? "bg-slate-100 dark:bg-slate-800 group-hover:bg-primary/10"
                       : "bg-slate-100 dark:bg-slate-800 group-hover:bg-amber-100 dark:group-hover:bg-amber-900/30"
                   )}>
                     <Package size={16} className={cn(
                       "transition-colors",
-                      isCopy ? "text-slate-400 group-hover:text-primary" : "text-slate-400 group-hover:text-amber-600"
+                      isCopy || isBenchmark ? "text-slate-400 group-hover:text-primary" : "text-slate-400 group-hover:text-amber-600"
                     )} />
                   </div>
                   <div className="flex-1 min-w-0">
@@ -637,11 +662,11 @@ function StyleSearchModal({
                   </div>
                   <div className={cn(
                     "flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-semibold mt-3 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-all",
-                    isCopy
+                    isCopy || isBenchmark
                       ? "bg-primary/10 text-primary"
                       : "bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400"
                   )}>
-                    {isCopy ? <><Copy size={10} /> Copy</> : <><ChevronRight size={10} /> Select</>}
+                    {isCopy ? <><Copy size={10} /> Copy</> : isBenchmark ? <><GitBranch size={10} /> Benchmark</> : <><ChevronRight size={10} /> Select</>}
                   </div>
                 </button>
               ))}
@@ -665,6 +690,24 @@ function StyleSearchModal({
               <Badge className="text-[9px] h-4 px-1.5 bg-amber-200 dark:bg-amber-800 text-amber-800 dark:text-amber-200 border-none flex-shrink-0">{chosenProduct.category}</Badge>
             </div>
 
+            {isBenchmark ? (
+              <div className="p-6 space-y-5">
+                <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-primary mb-2">Benchmarking from</p>
+                  <p className="font-mono text-sm font-semibold text-slate-800 dark:text-slate-100">{chosenProduct.styleCode}</p>
+                  <p className="text-sm font-semibold text-slate-700 dark:text-slate-200 mt-1">{chosenProduct.description}</p>
+                  <p className="text-xs text-slate-500 mt-1">{chosenProduct.brand} · {chosenProduct.category}</p>
+                </div>
+                <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                  Values from this style will be used to pre-populate applicable fields. You can review and change them before continuing.
+                </p>
+                <div className="flex justify-end gap-2">
+                  <Button variant="outline" size="sm" onClick={() => setModalStep(1)} className="text-xs">Choose Another</Button>
+                  <Button size="sm" onClick={handleConfirmBenchmark} className="gap-1.5 text-xs"><GitBranch size={12} /> Use as Benchmark</Button>
+                </div>
+              </div>
+            ) : (
+            <>
             {/* Instruction */}
             <div className="px-6 pt-4 pb-2">
               <p className="text-xs text-slate-600 dark:text-slate-400">
@@ -716,6 +759,8 @@ function StyleSearchModal({
                 {selectedReasons.size === 0 ? "Edit All Fields" : "Start Editing"}
               </Button>
             </div>
+            </>
+            )}
           </div>
         )}
       </div>
@@ -756,17 +801,62 @@ function stateFromProduct(p: ExistingProduct): WizardState {
   };
 }
 
+function benchmarkStateFromProduct(p: ExistingProduct): WizardState {
+  const base = { ...EMPTY_STATE };
+  const dynamicFields: Record<string, any> = {};
+  DYNAMIC_FIELDS.forEach(field => {
+    if (["unitBarcode", "innerBarcode", "tags", "vendorStyleCode"].includes(field.id)) return;
+    if (field.appliesTo?.categories && !field.appliesTo.categories.includes(p.category)) return;
+    if (field.appliesTo?.subCategories && !field.appliesTo.subCategories.includes(p.subCategory)) return;
+    const realisticValue: Record<string, string> = {
+      countryOfOrigin: p.brand === "SONY" ? "Japan" : p.category === "TECH" ? "China" : "Australia",
+      colourway: p.skuVariants.colors[0] ?? "Standard",
+      size: p.skuVariants.sizes[0] ?? "One Size",
+      shelfLife: p.category === "FRESH FOOD" ? "5" : "",
+      bestBefore: p.category === "FRESH FOOD" ? "4" : "",
+      temperatureControl: p.planning.temperatureControl ?? "Ambient",
+      casePack: String(p.logistics.cartonQty),
+      vendorColourCode: p.skuVariants.colors[0]?.slice(0, 3).toUpperCase() ?? "STD",
+      warranty: p.category === "TECH" ? "1 Year" : "No Warranty",
+      batteryType: p.category === "TECH" ? "Built-in Rechargeable" : "None",
+      seasonality: "Evergreen",
+      exclusivity: "Non-Exclusive",
+      plcStatus: "Current",
+    };
+    dynamicFields[field.id] = field.type === "multi-select"
+      ? (field.options?.slice(0, 2) ?? [])
+      : field.type === "toggle" ? false
+      : field.type === "number" ? "14"
+      : realisticValue[field.id] ?? field.options?.[0] ?? "Standard";
+  });
+  return {
+    ...base,
+    buyer: p.buyer, vendor: p.vendor, brand: p.brand,
+    productType: p.category === "TECH" ? "Hard Lines" : p.category === "FASHION" ? "Soft Lines" : "Consumable",
+    category: p.hierarchy.category, subCategory: p.hierarchy.subCategory,
+    merchArea: p.hierarchy.merchArea, planningGroup: p.hierarchy.planningGroup, subGroup: p.hierarchy.subGroup,
+    leadTime: String(p.logistics.leadTime), orderMultiple: String(p.logistics.orderMultiple),
+    distributionMultiple: String(p.logistics.distributionMultiple), cartonQty: String(p.logistics.cartonQty),
+    weight: String(p.logistics.weight), replenishable: p.planning.replenishable,
+    dynamicFields,
+    selectedColors: p.skuVariants.colors, selectedSizes: p.skuVariants.sizes,
+  };
+}
+
 // ─── Hierarchy Cascade Component ─────────────────────────────────────────────
 type HierarchyValue = { category: string; subCategory: string; merchArea: string; planningGroup: string; subGroup: string };
 
 function HierarchyCascade({
-  leaves, value, onChange, title, accent = "primary",
+  leaves, value, onChange, title, accent = "primary", benchmarkSource, benchmarkPending, onApprove,
 }: {
   leaves: HierarchyLeaf[];
   value: HierarchyValue;
   onChange: (v: HierarchyValue) => void;
   title: string;
   accent?: "primary" | "amber";
+  benchmarkSource?: string;
+  benchmarkPending?: Set<string>;
+  onApprove?: (key: string) => void;
 }) {
   const uniq = (arr: string[]) => Array.from(new Set(arr));
 
@@ -828,7 +918,7 @@ function HierarchyCascade({
       {/* Dropdowns — 5 levels */}
       <div className="grid grid-cols-1 gap-2.5">
         {/* Category */}
-        <FieldRow label="Category" required>
+        <FieldRow label="Category" required benchmarked={!!benchmarkSource} benchmarkSource={benchmarkSource} reviewed={!benchmarkPending?.has("category")} onApprove={() => onApprove?.("category")}>
           <Select value={value.category} onValueChange={handleCategory}>
             <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select category…" /></SelectTrigger>
             <SelectContent>{categories.map(c => <SelectItem key={c} value={c} className="text-xs">{c}</SelectItem>)}</SelectContent>
@@ -836,7 +926,7 @@ function HierarchyCascade({
         </FieldRow>
 
         {/* Sub Category */}
-        <FieldRow label="Sub Category">
+        <FieldRow label="Sub Category" benchmarked={!!benchmarkSource} benchmarkSource={benchmarkSource} reviewed={!benchmarkPending?.has("subCategory")} onApprove={() => onApprove?.("subCategory")}>
           <Select value={value.subCategory} disabled={!value.category} onValueChange={handleSubCat}>
             <SelectTrigger className="h-8 text-xs">
               <SelectValue placeholder={value.category ? "Select sub category…" : "Select category first"} />
@@ -846,7 +936,7 @@ function HierarchyCascade({
         </FieldRow>
 
         {/* Merch Area */}
-        <FieldRow label="Merch Area">
+        <FieldRow label="Merch Area" benchmarked={!!benchmarkSource} benchmarkSource={benchmarkSource} reviewed={!benchmarkPending?.has("merchArea")} onApprove={() => onApprove?.("merchArea")}>
           <Select value={value.merchArea} disabled={!value.subCategory} onValueChange={handleMerchArea}>
             <SelectTrigger className="h-8 text-xs">
               <SelectValue placeholder={value.subCategory ? "Select merch area…" : "Select sub category first"} />
@@ -856,7 +946,7 @@ function HierarchyCascade({
         </FieldRow>
 
         {/* Planning Group */}
-        <FieldRow label="Planning Group">
+        <FieldRow label="Planning Group" benchmarked={!!benchmarkSource} benchmarkSource={benchmarkSource} reviewed={!benchmarkPending?.has("planningGroup")} onApprove={() => onApprove?.("planningGroup")}>
           <Select value={value.planningGroup} disabled={!value.merchArea} onValueChange={handlePlanGroup}>
             <SelectTrigger className="h-8 text-xs">
               <SelectValue placeholder={value.merchArea ? "Select planning group…" : "Select merch area first"} />
@@ -866,7 +956,7 @@ function HierarchyCascade({
         </FieldRow>
 
         {/* Sub Planning Group — selecting this auto-populates all levels above */}
-        <FieldRow label="Sub Planning Group" helper="Selecting this auto-fills all levels above">
+        <FieldRow label="Sub Planning Group" helper="Selecting this auto-fills all levels above" benchmarked={!!benchmarkSource} benchmarkSource={benchmarkSource} reviewed={!benchmarkPending?.has("subGroup")} onApprove={() => onApprove?.("subGroup")}>
           <Select value={value.subGroup} onValueChange={handleSubGroup}>
             <SelectTrigger className={cn("h-8 text-xs", value.subGroup && "ring-1 ring-emerald-400")}>
               <SelectValue placeholder="Select or pick to auto-fill…" />
@@ -949,6 +1039,24 @@ function WizardProgress({
 }
 
 const ALL_STEPS_DONE = new Set([1, 2, 3, 4, 5, 6, 7]);
+const BENCHMARK_FIELDS = [
+  "buyer", "vendor", "brand", "productType", "category", "subCategory", "merchArea", "planningGroup", "subGroup",
+  "leadTime", "orderMultiple", "distributionMultiple", "cartonQty", "weight", "replenishable",
+  "selectedColors", "selectedSizes",
+];
+
+function BenchmarkSectionSummary({ pending, total, onApproveAll }: { pending: number; total: number; onApproveAll: () => void }) {
+  if (!total) return null;
+  return (
+    <div className="mb-3 flex items-center justify-between gap-3 rounded-lg border border-primary/15 bg-primary/[0.03] px-3 py-2">
+      <div>
+        <p className="text-[10px] font-semibold text-slate-600 dark:text-slate-300">Values from the benchmark style should be reviewed before continuing.</p>
+        <p className="text-[10px] text-slate-400 mt-0.5">Benchmarked: {total} · Reviewed: {total - pending} · Remaining: {pending}</p>
+      </div>
+      {pending > 0 && <Button variant="ghost" size="sm" onClick={onApproveAll} className="h-7 gap-1 text-[10px] text-primary px-2"><Check size={11} /> Approve All</Button>}
+    </div>
+  );
+}
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function ProductSetupWizard() {
@@ -975,6 +1083,10 @@ export default function ProductSetupWizard() {
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
   const [showCopyModal, setShowCopyModal]   = useState(false);
   const [showEditModal, setShowEditModal]   = useState(false);
+  const [showIncompleteSaveDialog, setShowIncompleteSaveDialog] = useState(false);
+  const [benchmarkSource, setBenchmarkSource] = useState<ExistingProduct | null>(null);
+  const [benchmarkFieldKeys, setBenchmarkFieldKeys] = useState<Set<string>>(new Set());
+  const [benchmarkPending, setBenchmarkPending] = useState<Set<string>>(new Set());
   const [fieldErrors, setFieldErrors]       = useState<Record<string, string>>({});
   const [submitState, setSubmitState]       = useState<"idle" | "loading" | "success">("idle");
   const [plcStatus, setPlcStatus]           = useState<PLCStatus>("Current");
@@ -1047,8 +1159,32 @@ export default function ProductSetupWizard() {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  const set = (key: keyof WizardState, value: any) => setState(p => ({ ...p, [key]: value }));
-  const setDynamic = (key: string, value: any) => setState(p => ({ ...p, dynamicFields: { ...p.dynamicFields, [key]: value } }));
+  const clearBenchmarkPending = (key: string) => setBenchmarkPending(prev => {
+    if (!prev.has(key)) return prev;
+    const next = new Set(prev); next.delete(key); return next;
+  });
+  const approveBenchmark = (key: string) => clearBenchmarkPending(key);
+  const set = (key: keyof WizardState, value: any) => { clearBenchmarkPending(String(key)); setState(p => ({ ...p, [key]: value })); };
+  const setDynamic = (key: string, value: any) => { clearBenchmarkPending(`dynamic.${key}`); setState(p => ({ ...p, dynamicFields: { ...p.dynamicFields, [key]: value } })); };
+  const benchmarked = (key: string) => benchmarkFieldKeys.has(key);
+  const pendingFor = (keys: string[]) => keys.filter(key => benchmarkPending.has(key)).length;
+  const approveAll = (keys: string[]) => setBenchmarkPending(prev => {
+    const next = new Set(prev); keys.forEach(key => next.delete(key)); return next;
+  });
+
+  const handleBenchmarkStyle = (product: ExistingProduct) => {
+    setBenchmarkSource(product);
+    setState(benchmarkStateFromProduct(product));
+    setVendorSearch(product.vendor);
+    const seededState = benchmarkStateFromProduct(product);
+    const dynamicKeys = Object.keys(seededState.dynamicFields).map(key => `dynamic.${key}`);
+    setBenchmarkFieldKeys(new Set([...BENCHMARK_FIELDS, ...dynamicKeys]));
+    setBenchmarkPending(new Set([...BENCHMARK_FIELDS, ...dynamicKeys]));
+    setCompletedSteps(new Set());
+    setStep(1);
+    setEntryStage("wizard");
+    setShowCopyModal(false);
+  };
 
   const markCompleted = (s: number) => setCompletedSteps(prev => new Set(Array.from(prev).concat(s)));
 
@@ -1068,44 +1204,7 @@ export default function ProductSetupWizard() {
     setRecentDrafts(loadDrafts().slice(0, 5));
   };
 
-  const handleCopyStyle = (p: ExistingProduct) => {
-    setState({
-      ...EMPTY_STATE,
-      buyer: p.buyer,
-      vendor: p.vendor,
-      brand: p.brand,
-      longDescription: p.description,
-      shortDescription: p.description.slice(0, 40),
-      productType: "",
-      category: p.hierarchy.category,
-      subCategory: p.hierarchy.subCategory,
-      merchArea: p.hierarchy.merchArea,
-      planningGroup: p.hierarchy.planningGroup,
-      subGroup: p.hierarchy.subGroup,
-      leadTime: String(p.logistics.leadTime),
-      orderMultiple: String(p.logistics.orderMultiple),
-      distributionMultiple: String(p.logistics.distributionMultiple),
-      weight: String(p.logistics.weight),
-      cartonQty: String(p.logistics.cartonQty),
-      replenishable: p.planning.replenishable,
-       // New products always begin as Current; lifecycle changes belong to the
-       // existing-style experience below, not the initial creation sequence.
-       dynamicFields: {
-         plcStatus: "Current",
-         ...(p.planning.temperatureControl ? { temperatureControl: p.planning.temperatureControl } : {}),
-       },
-      selectedColors: p.skuVariants.colors,
-      selectedSizes: p.skuVariants.sizes,
-      length: "", width: "", height: "", upc: "",
-    });
-    setVendorSearch(p.vendor);
-    setPlcStatus("Current");
-    setProductImages([]);
-    setInnerPacks([]);
-    setCompletedSteps(new Set([1, 2]));
-    setShowCopyModal(false);
-    setStep(3);
-  };
+  const requestSaveDraft = () => setShowIncompleteSaveDialog(true);
 
   const handleEditStyle = (p: ExistingProduct, reasons?: EditReason[]) => {
     const resolvedReasons = reasons ?? [];
@@ -1208,15 +1307,16 @@ export default function ProductSetupWizard() {
       </div>
 
       <SectionCard title="Stakeholders">
+        <BenchmarkSectionSummary pending={pendingFor(["buyer", "vendor"])} total={benchmarkSource ? 2 : 0} onApproveAll={() => approveAll(["buyer", "vendor"])} />
         <div className="grid grid-cols-2 gap-4">
-          <FieldRow label="Buyer" required>
+          <FieldRow label="Buyer" required benchmarked={benchmarked("buyer")} benchmarkSource={benchmarkSource?.styleCode} reviewed={!benchmarkPending.has("buyer")} onApprove={() => approveBenchmark("buyer")}>
             <Select value={state.buyer} onValueChange={v => set("buyer", v)}>
               <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Select buyer…" /></SelectTrigger>
               <SelectContent>{BUYERS.map(b => <SelectItem key={b} value={b}>{b}</SelectItem>)}</SelectContent>
             </Select>
           </FieldRow>
 
-          <FieldRow label="Vendor" required>
+          <FieldRow label="Vendor" required benchmarked={benchmarked("vendor")} benchmarkSource={benchmarkSource?.styleCode} reviewed={!benchmarkPending.has("vendor")} onApprove={() => approveBenchmark("vendor")}>
             <div ref={vendorRef} className="relative">
               <Input
                 value={vendorSearch}
@@ -1251,8 +1351,9 @@ export default function ProductSetupWizard() {
       </SectionCard>
 
       <SectionCard title="Product Identity">
+        <BenchmarkSectionSummary pending={pendingFor(["brand", "productType"])} total={benchmarkSource ? 2 : 0} onApproveAll={() => approveAll(["brand", "productType"])} />
         <div className="grid grid-cols-2 gap-4">
-          <FieldRow label="Brand" required>
+          <FieldRow label="Brand" required benchmarked={benchmarked("brand")} benchmarkSource={benchmarkSource?.styleCode} reviewed={!benchmarkPending.has("brand")} onApprove={() => approveBenchmark("brand")}>
             <Select value={state.brand} onValueChange={v => set("brand", v)}>
               <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Select brand…" /></SelectTrigger>
               <SelectContent>
@@ -1262,7 +1363,7 @@ export default function ProductSetupWizard() {
               </SelectContent>
             </Select>
           </FieldRow>
-          <FieldRow label="Product Type">
+          <FieldRow label="Product Type" benchmarked={benchmarked("productType")} benchmarkSource={benchmarkSource?.styleCode} reviewed={!benchmarkPending.has("productType")} onApprove={() => approveBenchmark("productType")}>
             <Select value={state.productType} onValueChange={v => set("productType", v)}>
               <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Select type…" /></SelectTrigger>
               <SelectContent>{PRODUCT_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
@@ -1284,7 +1385,7 @@ export default function ProductSetupWizard() {
       </SectionCard>
 
       {recentDrafts.length > 0 && (
-        <SectionCard title="Recent Drafts" badge={
+        <SectionCard title="Recent Incomplete Setups" badge={
           <button
             onClick={() => navigate("/product-setup/drafts")}
             className="text-[10px] text-primary hover:underline flex items-center gap-0.5"
@@ -1318,7 +1419,7 @@ export default function ProductSetupWizard() {
                       )} />
                     ))}
                   </div>
-                  <Badge className="text-[9px] bg-amber-50 text-amber-600 border-amber-200 border h-4 px-1.5">Draft</Badge>
+                  <Badge className="text-[9px] bg-amber-50 text-amber-600 border-amber-200 border h-4 px-1.5">Incomplete</Badge>
                 </div>
               </button>
             ))}
@@ -1347,6 +1448,7 @@ export default function ProductSetupWizard() {
           </p>
         </div>
 
+        <BenchmarkSectionSummary pending={pendingFor(["category", "subCategory", "merchArea", "planningGroup", "subGroup"])} total={benchmarkSource ? 5 : 0} onApproveAll={() => approveAll(["category", "subCategory", "merchArea", "planningGroup", "subGroup"])} />
         <div className="grid grid-cols-2 gap-4">
           {/* APTOS Hierarchy */}
           <HierarchyCascade
@@ -1354,13 +1456,16 @@ export default function ProductSetupWizard() {
             value={aptosValue}
             title="APTOS Hierarchy"
             accent="primary"
-            onChange={v => setState(p => ({
+            benchmarkSource={benchmarkSource?.styleCode}
+            benchmarkPending={benchmarkPending}
+            onApprove={approveBenchmark}
+            onChange={v => { approveAll(["category", "subCategory", "merchArea", "planningGroup", "subGroup"]); setState(p => ({
               ...p,
               category: v.category, subCategory: v.subCategory,
               merchArea: v.merchArea, planningGroup: v.planningGroup, subGroup: v.subGroup,
               // Reset brand when category changes
               ...(v.category !== p.category ? { brand: "" } : {}),
-            }))}
+            })); }}
           />
 
           {/* Alternate Hierarchy */}
@@ -1418,6 +1523,11 @@ export default function ProductSetupWizard() {
         )
         : Object.entries(fieldsBySection).map(([section, fields]) => (
           <SectionCard key={section} title={section}>
+            <BenchmarkSectionSummary
+              pending={pendingFor(fields.map(field => `dynamic.${field.id}`))}
+              total={benchmarkSource ? fields.filter(field => benchmarked(`dynamic.${field.id}`)).length : 0}
+              onApproveAll={() => approveAll(fields.map(field => `dynamic.${field.id}`))}
+            />
             <div className="grid grid-cols-2 gap-4">
               {fields.map(field => {
                 const val   = state.dynamicFields[field.id];
@@ -1426,7 +1536,9 @@ export default function ProductSetupWizard() {
                   <div key={field.id} className={cn(
                     field.type === "multi-select" || field.type === "tag" || field.type === "textarea" ? "col-span-2" : ""
                   )}>
-                    <FieldRow label={field.label} required={field.required} helper={field.helperText} error={err}>
+                    <FieldRow label={field.label} required={field.required} helper={field.helperText} error={err}
+                      benchmarked={benchmarked(`dynamic.${field.id}`)} benchmarkSource={benchmarkSource?.styleCode}
+                      reviewed={!benchmarkPending.has(`dynamic.${field.id}`)} onApprove={() => approveBenchmark(`dynamic.${field.id}`)}>
                       <DynamicField field={field} value={val} error={err}
                         onChange={v => {
                           setDynamic(field.id, v);
@@ -1452,20 +1564,21 @@ export default function ProductSetupWizard() {
       </div>
 
       <SectionCard title="Ordering Parameters">
+        <BenchmarkSectionSummary pending={pendingFor(["leadTime", "orderMultiple", "distributionMultiple", "cartonQty", "replenishable"])} total={benchmarkSource ? 5 : 0} onApproveAll={() => approveAll(["leadTime", "orderMultiple", "distributionMultiple", "cartonQty", "replenishable"])} />
         <div className="grid grid-cols-3 gap-4">
-          <FieldRow label="Lead Time (days)" required helper="Days from PO to store delivery">
+          <FieldRow label="Lead Time (days)" required helper="Days from PO to store delivery" benchmarked={benchmarked("leadTime")} benchmarkSource={benchmarkSource?.styleCode} reviewed={!benchmarkPending.has("leadTime")} onApprove={() => approveBenchmark("leadTime")}>
             <Input type="number" value={state.leadTime} onChange={e => set("leadTime", e.target.value)}
               placeholder="e.g. 14" className="h-9 text-sm" />
           </FieldRow>
-          <FieldRow label="Order Multiple" required helper="Minimum qty increment for orders">
+          <FieldRow label="Order Multiple" required helper="Minimum qty increment for orders" benchmarked={benchmarked("orderMultiple")} benchmarkSource={benchmarkSource?.styleCode} reviewed={!benchmarkPending.has("orderMultiple")} onApprove={() => approveBenchmark("orderMultiple")}>
             <Input type="number" value={state.orderMultiple} onChange={e => set("orderMultiple", e.target.value)}
               placeholder="e.g. 6" className="h-9 text-sm" />
           </FieldRow>
-          <FieldRow label="Distribution Multiple" helper="DC dispatch increment">
+          <FieldRow label="Distribution Multiple" helper="DC dispatch increment" benchmarked={benchmarked("distributionMultiple")} benchmarkSource={benchmarkSource?.styleCode} reviewed={!benchmarkPending.has("distributionMultiple")} onApprove={() => approveBenchmark("distributionMultiple")}>
             <Input type="number" value={state.distributionMultiple} onChange={e => set("distributionMultiple", e.target.value)}
               placeholder="e.g. 12" className="h-9 text-sm" />
           </FieldRow>
-          <FieldRow label="Carton Quantity" helper="Units per outer carton">
+          <FieldRow label="Carton Quantity" helper="Units per outer carton" benchmarked={benchmarked("cartonQty")} benchmarkSource={benchmarkSource?.styleCode} reviewed={!benchmarkPending.has("cartonQty")} onApprove={() => approveBenchmark("cartonQty")}>
             <Input type="number" value={state.cartonQty} onChange={e => set("cartonQty", e.target.value)}
               placeholder="e.g. 24" className="h-9 text-sm" />
           </FieldRow>
@@ -1478,7 +1591,7 @@ export default function ProductSetupWizard() {
             placeholder="012345678901" className={cn("h-9 text-sm font-mono", fieldErrors.upc && "border-red-400")} />
             {fieldErrors.upc && <p className="text-[11px] text-red-500 mt-1">{fieldErrors.upc}</p>}
           </FieldRow>
-          <FieldRow label="Replenishable">
+          <FieldRow label="Replenishable" benchmarked={benchmarked("replenishable")} benchmarkSource={benchmarkSource?.styleCode} reviewed={!benchmarkPending.has("replenishable")} onApprove={() => approveBenchmark("replenishable")}>
             <div className="flex items-center gap-3 h-9">
               <Switch checked={state.replenishable} onCheckedChange={v => set("replenishable", v)} />
               <span className="text-sm text-slate-600 dark:text-slate-300">{state.replenishable ? "Yes" : "No"}</span>
@@ -1489,7 +1602,7 @@ export default function ProductSetupWizard() {
 
       <SectionCard title="Dimensions & Weight">
         <div className="grid grid-cols-4 gap-4">
-          <FieldRow label="Weight (kg)">
+          <FieldRow label="Weight (kg)" benchmarked={benchmarked("weight")} benchmarkSource={benchmarkSource?.styleCode} reviewed={!benchmarkPending.has("weight")} onApprove={() => approveBenchmark("weight")}>
             <Input type="number" step="0.01" value={state.weight} onChange={e => set("weight", e.target.value)}
               placeholder="0.00" className="h-9 text-sm" />
           </FieldRow>
@@ -1554,15 +1667,21 @@ export default function ProductSetupWizard() {
         <SectionCard title="Colours" badge={
           <span className="text-[10px] font-semibold text-slate-400">{state.selectedColors.length} selected</span>
         }>
-          <ChipSelector options={colorOptions} selected={state.selectedColors}
-            onChange={v => set("selectedColors", v)} />
+          <BenchmarkSectionSummary pending={pendingFor(["selectedColors"])} total={benchmarked("selectedColors") ? 1 : 0} onApproveAll={() => approveAll(["selectedColors"])} />
+          <FieldRow label="Colourway variants" benchmarked={benchmarked("selectedColors")} benchmarkSource={benchmarkSource?.styleCode} reviewed={!benchmarkPending.has("selectedColors")} onApprove={() => approveBenchmark("selectedColors")}>
+            <ChipSelector options={colorOptions} selected={state.selectedColors}
+              onChange={v => set("selectedColors", v)} />
+          </FieldRow>
         </SectionCard>
 
         <SectionCard title="Sizes" badge={
           <span className="text-[10px] font-semibold text-slate-400">{state.selectedSizes.length} selected</span>
         }>
-          <ChipSelector options={sizeOptions} selected={state.selectedSizes}
-            onChange={v => set("selectedSizes", v)} />
+          <BenchmarkSectionSummary pending={pendingFor(["selectedSizes"])} total={benchmarked("selectedSizes") ? 1 : 0} onApproveAll={() => approveAll(["selectedSizes"])} />
+          <FieldRow label="Size variants" benchmarked={benchmarked("selectedSizes")} benchmarkSource={benchmarkSource?.styleCode} reviewed={!benchmarkPending.has("selectedSizes")} onApprove={() => approveBenchmark("selectedSizes")}>
+            <ChipSelector options={sizeOptions} selected={state.selectedSizes}
+              onChange={v => set("selectedSizes", v)} />
+          </FieldRow>
         </SectionCard>
       </div>
 
@@ -1844,7 +1963,7 @@ export default function ProductSetupWizard() {
               <>
                 <button
                   type="button"
-                  onClick={() => setEntryStage("wizard")}
+                  onClick={() => { setEntryStage("wizard"); setBenchmarkSource(null); setBenchmarkFieldKeys(new Set()); setBenchmarkPending(new Set()); }}
                   className="group text-left rounded-2xl border-2 border-primary/20 bg-white/80 dark:bg-slate-900/60 p-6 shadow-sm hover:border-primary hover:shadow-md transition-all"
                 >
                   <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center mb-5 group-hover:bg-primary group-hover:text-white transition-colors">
@@ -1856,14 +1975,14 @@ export default function ProductSetupWizard() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => { setEntryStage("wizard"); setShowCopyModal(true); }}
+                  onClick={() => setShowCopyModal(true)}
                   className="group text-left rounded-2xl border-2 border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-900/60 p-6 shadow-sm hover:border-primary/50 hover:shadow-md transition-all"
                 >
                   <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 flex items-center justify-center mb-5 group-hover:bg-primary/10 group-hover:text-primary transition-colors">
-                    <Copy size={18} />
+                    <GitBranch size={18} />
                   </div>
-                  <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100">Copy an Existing Style</h2>
-                  <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">Select an existing style and use it as the starting point for a new style.</p>
+                  <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100">Benchmark Existing Style</h2>
+                  <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">Use an existing style as a reference while creating a new style.</p>
                   <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary mt-6">Choose a style <ChevronRight size={13} /></span>
                 </button>
               </>
@@ -1903,7 +2022,7 @@ export default function ProductSetupWizard() {
             </Button>
           )}
         </div>
-        {showCopyModal && <StyleSearchModal mode="copy" onClose={() => { setShowCopyModal(false); setEntryStage("new-choice"); }} onSelect={handleCopyStyle} />}
+        {showCopyModal && <StyleSearchModal mode="benchmark" onClose={() => { setShowCopyModal(false); setEntryStage("new-choice"); }} onSelect={handleBenchmarkStyle} />}
         {showEditModal && <StyleSearchModal mode="edit" onClose={() => { setShowEditModal(false); setEntryStage("choice"); }} onSelect={handleEditStyle} />}
       </MainLayout>
     );
@@ -1951,8 +2070,8 @@ export default function ProductSetupWizard() {
             }
             {!isEditMode && (
               <>
-                <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={saveDraft}>
-                  <Save size={13} /> Save Draft
+                <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={requestSaveDraft}>
+                  <Save size={13} /> Save as Incomplete
                 </Button>
                 <Button
                   variant="outline" size="sm"
@@ -1960,7 +2079,7 @@ export default function ProductSetupWizard() {
                   onClick={() => navigate("/product-setup/drafts")}
                 >
                   <FileText size={13} />
-                  {recentDrafts.length > 0 ? `${recentDrafts.length} Draft${recentDrafts.length !== 1 ? "s" : ""}` : "Drafts"}
+                  {recentDrafts.length > 0 ? `${recentDrafts.length} Incomplete Setup${recentDrafts.length !== 1 ? "s" : ""}` : "Incomplete Setups"}
                 </Button>
               </>
             )}
@@ -1972,7 +2091,20 @@ export default function ProductSetupWizard() {
 
         {/* Horizontal journey with the existing wizard content below */}
         <WizardProgress currentStep={step} completedSteps={completedSteps} onStepClick={setStep} />
-        <div className="pb-20">
+        {benchmarkSource && (
+          <div className="mt-3 flex items-center justify-between gap-3 rounded-xl border border-primary/15 bg-white/70 dark:bg-slate-900/50 px-4 py-2.5">
+            <div className="flex items-center gap-2 min-w-0">
+              <GitBranch size={14} className="text-primary flex-shrink-0" />
+              <p className="text-xs text-slate-600 dark:text-slate-300 truncate">
+                Benchmarking from <span className="font-mono font-semibold text-slate-800 dark:text-slate-100">{benchmarkSource.styleCode}</span> · {benchmarkSource.description}
+              </p>
+            </div>
+            <span className="text-[10px] text-primary font-semibold flex-shrink-0">
+              {benchmarkPending.size} remaining review{benchmarkPending.size !== 1 ? "s" : ""}
+            </span>
+          </div>
+        )}
+        <div className="mt-2 pb-20">
           <div className="min-w-0">
             {isEditMode && editReasons.length > 0 && (
               <div className="mt-4 flex items-center gap-2 flex-wrap">
@@ -2014,7 +2146,7 @@ export default function ProductSetupWizard() {
                     <ChevronLeft size={13} /> Back
                   </Button>
                   <div className="flex items-center gap-2">
-                    <Button variant="ghost" size="sm" onClick={saveDraft} className="gap-1.5 text-xs text-slate-600 dark:text-slate-300">
+                    <Button variant="ghost" size="sm" onClick={requestSaveDraft} className="gap-1.5 text-xs text-slate-600 dark:text-slate-300">
                       <Save size={13} /> Save Progress
                     </Button>
                     {step < 7
@@ -2038,8 +2170,21 @@ export default function ProductSetupWizard() {
         </div>
       </div>
 
-      {showCopyModal && <StyleSearchModal mode="copy" onClose={() => setShowCopyModal(false)} onSelect={handleCopyStyle} />}
       {showEditModal && <StyleSearchModal mode="edit" onClose={() => setShowEditModal(false)} onSelect={handleEditStyle} />}
+      <AlertDialog open={showIncompleteSaveDialog} onOpenChange={setShowIncompleteSaveDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Leave this setup incomplete?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Your progress will be saved as an incomplete setup. You can return to it later, but try to complete the setup when possible.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Continue Editing</AlertDialogCancel>
+            <AlertDialogAction onClick={saveDraft}>Save as Incomplete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </MainLayout>
   );
 }
