@@ -157,6 +157,13 @@ export interface HierarchyLeaf {
 }
 
 export const APTOS_LEAVES: HierarchyLeaf[] = [
+  // Dynamic-field fixture paths
+  { category: "CONSUMABLES", subCategory: "Fresh Food", merchArea: "Salads", planningGroup: "Salads", subGroup: "Fresh Salads" },
+  { category: "CONSUMABLES", subCategory: "Candy", merchArea: "Souvenir Candy", planningGroup: "Souvenir Candy", subGroup: "Souvenir Candy" },
+  { category: "FASHION", subCategory: "Handbags", merchArea: "Handbags", planningGroup: "Handbags", subGroup: "Handbags" },
+  { category: "LOCAL", subCategory: "Local Food", merchArea: "Local Food", planningGroup: "Local Food", subGroup: "Local Food" },
+  { category: "SPECIALTY", subCategory: "Sports", merchArea: "Sports Events", planningGroup: "Sports Events", subGroup: "Sports Events" },
+  { category: "TECH & TRAVEL", subCategory: "Travel", merchArea: "Travel Pillows", planningGroup: "Travel Pillows", subGroup: "Travel Pillows" },
   // TECH — Audio
   { category: "TECH", subCategory: "Audio", merchArea: "Headphones", planningGroup: "Wireless",        subGroup: "In-Ear Wireless" },
   { category: "TECH", subCategory: "Audio", merchArea: "Headphones", planningGroup: "Wireless",        subGroup: "Over-Ear Wireless" },
@@ -297,136 +304,309 @@ export interface FieldConfig {
   placeholder?: string;
 }
 
+// ─── Field specification by category and merch area ────────────────────────
 export const DYNAMIC_FIELDS: FieldConfig[] = [
-  // ── Product Information ────────────────────────────────────────────────────
+  // ───────────────────────────────────────────────────────────────────────────
+  // UNIVERSAL FIELDS — shown for all categories
+  // ───────────────────────────────────────────────────────────────────────────
   {
-    id: "countryOfOrigin", label: "Country of Origin", type: "dropdown", section: "Product Information",
-    required: true, options: ["Australia", "China", "USA", "UK", "Germany", "France", "Japan", "Italy", "Taiwan", "South Korea"],
-    helperText: "Primary country where the product is manufactured",
+    id: "merchandiseType", label: "Merchandise / Style Type", type: "text", section: "Universal Information",
+    helperText: "Type or classification of merchandise",
   },
   {
-    id: "unitBarcode", label: "Unit Barcode / UPC", type: "text", section: "Product Information",
-    required: true, validation: { type: "length", min: 12, max: 14 }, placeholder: "e.g. 012345678901",
-    helperText: "12-14 digit barcode",
+    id: "vendorStyle", label: "Primary Vendor Style", type: "text", section: "Universal Information",
+    placeholder: "Supplier's style code",
   },
   {
-    id: "innerBarcode", label: "Inner Barcode", type: "text", section: "Product Information",
-    validation: { type: "length", min: 12, max: 14 }, placeholder: "e.g. 012345678901",
+    id: "preDistributionType", label: "Pre-distribution Type", type: "dropdown", section: "Universal Information",
+    options: ["Bulk", "Individual", "Mixed"],
   },
   {
-    id: "colourway", label: "Colourway", type: "text", section: "Product Information",
-    placeholder: "e.g. Midnight Black",
+    id: "currentCost", label: "Current Cost", type: "number", section: "Universal Information",
+    placeholder: "0.00",
   },
   {
-    id: "size",  label: "Size",   type: "text", section: "Product Information", placeholder: "e.g. M, L, 500ml" },
-  {
-    id: "tags", label: "Product Tags", type: "tag", section: "Product Information",
-    helperText: "Add searchable tags for this product",
-  },
-
-  // ── Compliance ─────────────────────────────────────────────────────────────
-  {
-    id: "ageRestriction", label: "Age Restriction", type: "dropdown", section: "Compliance",
-    required: true, options: ["18+", "21+", "None"],
-    appliesTo: { categories: ["ALCOHOL"] },
-    helperText: "Regulatory age gate requirement",
+    id: "jurisdiction", label: "Jurisdiction", type: "dropdown", section: "Universal Information",
+    options: ["USA", "CAD", "MEX"],
   },
   {
-    id: "licensing", label: "Liquor Licence Category", type: "dropdown", section: "Compliance",
-    required: true, options: ["Standard", "Premium", "Duty Free", "Not Applicable"],
-    appliesTo: { categories: ["ALCOHOL"] },
+    id: "priceStatus", label: "Price Status", type: "dropdown", section: "Universal Information",
+    options: ["Active", "Inactive", "Pending"],
   },
   {
-    id: "dangerousGoods", label: "Dangerous Goods", type: "toggle", section: "Compliance",
-    helperText: "Contains lithium battery or other hazardous materials",
-    appliesTo: { categories: ["TECH"] },
+    id: "season", label: "Season", type: "dropdown", section: "Universal Information",
+    options: ["Spring", "Summer", "Fall", "Winter", "Year-Round"],
   },
   {
-    id: "warranty", label: "Warranty Period", type: "dropdown", section: "Compliance",
-    options: ["No Warranty", "3 Months", "6 Months", "1 Year", "2 Years", "Limited Lifetime"],
-    appliesTo: { categories: ["TECH"] },
+    id: "ticketFormat", label: "Ticket Format", type: "text", section: "Universal Information",
+    placeholder: "e.g. Standard, Premium",
   },
   {
-    id: "batteryType", label: "Battery Type", type: "dropdown", section: "Compliance",
-    options: ["None", "AA", "AAA", "Li-Ion", "Li-Polymer", "Built-in Rechargeable", "USB-C Rechargeable"],
-    appliesTo: { categories: ["TECH"], subCategories: ["Audio", "Accessories"] },
+    id: "orderMultiple", label: "Order Multiple", type: "number", section: "Universal Information",
+    helperText: "Minimum qty increment for orders",
   },
   {
-    id: "allergens", label: "Allergens", type: "multi-select", section: "Compliance",
-    required: true,
-    options: ["Gluten", "Dairy", "Eggs", "Nuts", "Peanuts", "Soy", "Fish", "Shellfish", "None"],
-    appliesTo: { categories: ["FRESH FOOD"] },
+    id: "minimumOrder", label: "Minimum Order", type: "number", section: "Universal Information",
   },
   {
-    id: "nutritionLabel", label: "Nutrition Label Required", type: "toggle", section: "Compliance",
-    appliesTo: { categories: ["FRESH FOOD"] },
-  },
-
-  // ── Fresh Food Specifics ───────────────────────────────────────────────────
-  {
-    id: "shelfLife", label: "Shelf Life (days)", type: "number", section: "Product Information",
-    required: true, validation: { type: "range", min: 1, max: 365 },
-    appliesTo: { categories: ["FRESH FOOD"] },
-    helperText: "Total shelf life from production date",
+    id: "distributionMultiple", label: "Distribution Multiple", type: "number", section: "Universal Information",
+    helperText: "DC dispatch increment",
   },
   {
-    id: "bestBefore", label: "Best Before Period (days)", type: "number", section: "Product Information",
-    required: true, validation: { type: "range", min: 1, max: 365 },
-    appliesTo: { categories: ["FRESH FOOD"] },
+    id: "replenishable", label: "Replenishable", type: "toggle", section: "Universal Information",
   },
   {
-    id: "proteinType", label: "Protein Type", type: "dropdown", section: "Product Information",
-    options: ["None", "Chicken", "Beef", "Pork", "Fish", "Prawn", "Egg", "Plant-Based", "Mixed", "Dairy"],
-    appliesTo: { categories: ["FRESH FOOD"] },
+    id: "fashionFlag", label: "Fashion Flag", type: "toggle", section: "Universal Information",
   },
   {
-    id: "temperatureControl", label: "Temperature Control", type: "dropdown", section: "Product Information",
-    required: true,
-    options: ["Ambient", "Chilled (0–5°C)", "Chilled (0–8°C)", "Frozen (-18°C)", "Controlled (15–20°C)"],
-    appliesTo: { categories: ["FRESH FOOD"] },
+    id: "promoFlag", label: "Promo Flag", type: "toggle", section: "Universal Information",
+  },
+  {
+    id: "reorderFlag", label: "Reorder Flag", type: "toggle", section: "Universal Information",
+  },
+  {
+    id: "inHouseUpcFlag", label: "In-house UPC Flag", type: "toggle", section: "Universal Information",
+  },
+  {
+    id: "vendorUpcFlag", label: "Vendor UPC Flag", type: "toggle", section: "Universal Information",
+  },
+  {
+    id: "consignmentFlag", label: "Consignment Flag", type: "toggle", section: "Universal Information",
+  },
+  {
+    id: "serialNumberFlag", label: "Serial Number Flag", type: "toggle", section: "Universal Information",
+  },
+  {
+    id: "countryOfOrigin", label: "Country of Origin", type: "dropdown", section: "Universal Information",
+    options: ["Australia", "China", "USA", "UK", "Germany", "France", "Japan", "Italy", "Taiwan", "South Korea"],
   },
 
-  // ── Vendor Details ─────────────────────────────────────────────────────────
+  // ───────────────────────────────────────────────────────────────────────────
+  // CONSUMABLES CATEGORY
+  // ───────────────────────────────────────────────────────────────────────────
   {
-    id: "vendorStyleCode", label: "Vendor Style Code", type: "text", section: "Vendor Details",
-    required: true, placeholder: "Supplier's own product code",
+    id: "deals1", label: "Deals 1", type: "text", section: "Consumables Requirements",
+    appliesTo: { categories: ["CONSUMABLES"] },
   },
   {
-    id: "vendorColourCode", label: "Vendor Colour Code", type: "text", section: "Vendor Details",
-    placeholder: "e.g. BLK, WHT",
-    appliesTo: { categories: ["FASHION", "TECH"] },
+    id: "calendar", label: "Calendar", type: "dropdown", section: "Consumables Requirements",
+    options: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+    appliesTo: { categories: ["CONSUMABLES"] },
   },
   {
-    id: "casePack", label: "Case Pack Qty", type: "number", section: "Vendor Details",
-    helperText: "Units per inner case",
+    id: "sizeCategory", label: "Size Category", type: "text", section: "Consumables Requirements",
+    appliesTo: { categories: ["CONSUMABLES"] },
+  },
+  {
+    id: "allowCustomerOrder", label: "Allow Customer Order", type: "toggle", section: "Consumables Requirements",
+    appliesTo: { categories: ["CONSUMABLES"] },
+  },
+  {
+    id: "leadTime", label: "Lead Time", type: "number", section: "Consumables Requirements",
+    appliesTo: { categories: ["CONSUMABLES"], subCategories: ["Candy"] },
+  },
+  {
+    id: "shelfLife", label: "Shelf Life (days)", type: "number", section: "Consumables Requirements",
+    validation: { type: "range", min: 1, max: 365 },
+    appliesTo: { categories: ["CONSUMABLES"], subCategories: ["Fresh Food"] },
+  },
+  {
+    id: "nonDiscountableItems", label: "Non-Discountable Items", type: "toggle", section: "Consumables Requirements",
+    appliesTo: { categories: ["CONSUMABLES"], subCategories: ["Tobacco", "Alcohol / Drinks"] },
+  },
+  {
+    id: "proteinType", label: "Protein Type", type: "dropdown", section: "Consumables Requirements",
+    options: ["None", "Chicken", "Beef", "Pork", "Fish", "Prawn", "Egg", "Plant-Based", "Dairy"],
+    appliesTo: { categories: ["CONSUMABLES"], merchAreas: ["Salads"] },
   },
 
-  // ── Retail Attributes ──────────────────────────────────────────────────────
+  // ───────────────────────────────────────────────────────────────────────────
+  // DESTINATION CATEGORY
+  // ───────────────────────────────────────────────────────────────────────────
   {
-    id: "plcStatus", label: "Initial PLC Status", type: "dropdown", section: "Retail Attributes",
-    required: true,
-    // Clearance is intentionally managed only after the style exists.
-    options: ["Current", "EOL"],
+    id: "import", label: "Import", type: "toggle", section: "Destination Requirements",
+    appliesTo: { categories: ["DESTINATION"] },
   },
   {
-    id: "exclusivity", label: "Exclusivity", type: "dropdown", section: "Retail Attributes",
-    options: ["Non-Exclusive", "Category Exclusive", "Retailer Exclusive", "Airport Exclusive"],
+    id: "hsTariffCode", label: "HS Tariff Code", type: "text", section: "Destination Requirements",
+    appliesTo: { categories: ["DESTINATION"] },
   },
   {
-    id: "seasonality", label: "Seasonality", type: "dropdown", section: "Retail Attributes",
-    options: ["Evergreen", "Spring/Summer", "Autumn/Winter", "Christmas", "Easter", "Summer Only"],
+    id: "supplierIncome", label: "Supplier Income", type: "number", section: "Destination Requirements",
+    appliesTo: { categories: ["DESTINATION"] },
   },
   {
-    id: "fashionSeason", label: "Fashion Season", type: "dropdown", section: "Retail Attributes",
-    required: true,
-    options: ["SS25", "AW25", "SS26", "AW26", "Core (Non-seasonal)"],
-    appliesTo: { categories: ["FASHION"] },
+    id: "entertainmentLicenses", label: "Entertainment Licenses", type: "text", section: "Destination Requirements",
+    appliesTo: { categories: ["DESTINATION"], merchAreas: ["Licensed Hardline", "LICD APPAREL&ACCS"] },
   },
   {
-    id: "fitType", label: "Fit Type", type: "dropdown", section: "Retail Attributes",
-    options: ["Regular Fit", "Slim Fit", "Relaxed Fit", "Oversized", "Tailored"],
-    appliesTo: { categories: ["FASHION"] },
-    appliesTo2: { subCategories: ["Apparel"] } as any,
+    id: "generalLicensed2", label: "General Licensed 2", type: "text", section: "Destination Requirements",
+    appliesTo: { categories: ["DESTINATION"], merchAreas: ["Licensed Hardline", "LICD APPAREL&ACCS"] },
+  },
+  {
+    id: "promos", label: "Promos", type: "text", section: "Destination Requirements",
+    appliesTo: { categories: ["DESTINATION"], merchAreas: ["Resort Drinkware", "Resort Souvenirs"] },
+  },
+  {
+    id: "ticketColorCode", label: "Ticket Color Code", type: "text", section: "Destination Requirements",
+    appliesTo: { categories: ["DESTINATION"], merchAreas: ["Resort Drinkware", "Resort Souvenirs"] },
+  },
+  {
+    id: "wholesaleCostCanaa", label: "Wholesale Cost CANAA", type: "number", section: "Destination Requirements",
+    appliesTo: { categories: ["DESTINATION"], merchAreas: ["Plush"] },
+  },
+  {
+    id: "themes", label: "Themes", type: "text", section: "Destination Requirements",
+    appliesTo: { categories: ["DESTINATION"], merchAreas: ["Resort Tees"] },
+  },
+  {
+    id: "compareAtRetail", label: "Compare at Retail", type: "number", section: "Destination Requirements",
+    appliesTo: { categories: ["DESTINATION"], merchAreas: ["Resorts Outerwear"] },
+  },
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // FASHION CATEGORY
+  // ───────────────────────────────────────────────────────────────────────────
+  {
+    id: "handbagShapes", label: "Handbag Shapes", type: "text", section: "Fashion Requirements",
+    appliesTo: { categories: ["FASHION"], subCategories: ["Handbags"] },
+  },
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // LOCAL CATEGORY
+  // ───────────────────────────────────────────────────────────────────────────
+  {
+    id: "width", label: "Width (cm)", type: "number", section: "Local Requirements",
+    appliesTo: { categories: ["LOCAL"], merchAreas: ["Local Food"] },
+  },
+  {
+    id: "height", label: "Height (cm)", type: "number", section: "Local Requirements",
+    appliesTo: { categories: ["LOCAL"], merchAreas: ["Local Food"] },
+  },
+  {
+    id: "depth", label: "Depth (cm)", type: "number", section: "Local Requirements",
+    appliesTo: { categories: ["LOCAL"], merchAreas: ["Local Food"] },
+  },
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // SPECIALTY CATEGORY
+  // ───────────────────────────────────────────────────────────────────────────
+  {
+    id: "designerBrands", label: "Designer Brands", type: "text", section: "Specialty Requirements",
+    appliesTo: { categories: ["SPECIALTY"], merchAreas: ["ESG"] },
+  },
+  {
+    id: "designerHandbagShapes", label: "Handbag Shapes", type: "text", section: "Specialty Requirements",
+    appliesTo: { categories: ["SPECIALTY"], merchAreas: ["ESG"] },
+  },
+  {
+    id: "harley", label: "Harley", type: "text", section: "Specialty Requirements",
+    appliesTo: { categories: ["SPECIALTY"], merchAreas: ["Harley"] },
+  },
+  {
+    id: "tShirtType", label: "T-Shirt Type", type: "text", section: "Specialty Requirements",
+    appliesTo: { categories: ["SPECIALTY"], merchAreas: ["Harley"] },
+  },
+  {
+    id: "deals2", label: "Deals 2", type: "text", section: "Specialty Requirements",
+    appliesTo: { categories: ["SPECIALTY"], merchAreas: ["Lees Donuts"] },
+  },
+  {
+    id: "specialtyShelfLife", label: "Shelf Life", type: "number", section: "Specialty Requirements",
+    appliesTo: { categories: ["SPECIALTY"], merchAreas: ["Pink Door"] },
+  },
+  {
+    id: "sportLicenses", label: "Sport Licenses", type: "text", section: "Specialty Requirements",
+    appliesTo: { categories: ["SPECIALTY"], subCategories: ["Sports"] },
+  },
+  {
+    id: "specialtyDeals1", label: "Deals 1", type: "text", section: "Specialty Requirements",
+    appliesTo: { categories: ["SPECIALTY"], subCategories: ["Sports"] },
+  },
+  {
+    id: "fifa", label: "FIFA", type: "text", section: "Specialty Requirements",
+    appliesTo: { categories: ["SPECIALTY"], merchAreas: ["Sports Events"] },
+  },
+  {
+    id: "formulaOne", label: "Formula One", type: "text", section: "Specialty Requirements",
+    appliesTo: { categories: ["SPECIALTY"], merchAreas: ["Sports Events"] },
+  },
+  {
+    id: "specialtySportSupplierIncome", label: "Supplier Income", type: "number", section: "Specialty Requirements",
+    appliesTo: { categories: ["SPECIALTY"], merchAreas: ["Sports Core"] },
+  },
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // TECH & TRAVEL CATEGORY
+  // ───────────────────────────────────────────────────────────────────────────
+  {
+    id: "imegRtv", label: "IMEG RTV", type: "text", section: "Tech & Travel Requirements",
+    appliesTo: { categories: ["TECH & TRAVEL"] },
+  },
+  {
+    id: "warranties", label: "Warranties", type: "dropdown", section: "Tech & Travel Requirements",
+    options: ["None", "Limited", "1 Year", "2 Years", "3 Years", "Lifetime"],
+    appliesTo: { categories: ["TECH & TRAVEL"] },
+  },
+  {
+    id: "techHsTariffCode", label: "HS Tariff Code", type: "text", section: "Tech & Travel Requirements",
+    appliesTo: { categories: ["TECH & TRAVEL"] },
+  },
+  {
+    id: "techLeadTime", label: "Lead Time", type: "number", section: "Tech & Travel Requirements",
+    appliesTo: { categories: ["TECH & TRAVEL"] },
+  },
+  {
+    id: "techWholesaleCostCanaa", label: "Wholesale Cost CANAA", type: "number", section: "Tech & Travel Requirements",
+    appliesTo: { categories: ["TECH & TRAVEL"] },
+  },
+  {
+    id: "techWeight", label: "Weight (kg)", type: "number", section: "Tech & Travel Requirements",
+    appliesTo: { categories: ["TECH & TRAVEL"] },
+  },
+  {
+    id: "techHeight", label: "Height (cm)", type: "number", section: "Tech & Travel Requirements",
+    appliesTo: { categories: ["TECH & TRAVEL"] },
+  },
+  {
+    id: "techWidth", label: "Width (cm)", type: "number", section: "Tech & Travel Requirements",
+    appliesTo: { categories: ["TECH & TRAVEL"] },
+  },
+  {
+    id: "techDepth", label: "Depth (cm)", type: "number", section: "Tech & Travel Requirements",
+    appliesTo: { categories: ["TECH & TRAVEL"] },
+  },
+  {
+    id: "hazardousMaterials", label: "Hazardous Materials", type: "toggle", section: "Tech & Travel Requirements",
+    appliesTo: { categories: ["TECH & TRAVEL"], subCategories: ["Accessories"] },
+  },
+  {
+    id: "techNonDiscountable", label: "Non-Discountable Items", type: "toggle", section: "Tech & Travel Requirements",
+    appliesTo: { categories: ["TECH & TRAVEL"], subCategories: ["Accessories", "Audio"] },
+  },
+  {
+    id: "techDeals1", label: "Deals 1", type: "text", section: "Tech & Travel Requirements",
+    appliesTo: { categories: ["TECH & TRAVEL"], subCategories: ["Audio"] },
+  },
+  {
+    id: "techCompareAtRetail", label: "Compare at Retail", type: "number", section: "Tech & Travel Requirements",
+    appliesTo: { categories: ["TECH & TRAVEL"], subCategories: ["Audio"] },
+  },
+  {
+    id: "customsDescription", label: "Customs Description", type: "text", section: "Tech & Travel Requirements",
+    appliesTo: { categories: ["TECH & TRAVEL"], merchAreas: ["Travel Pillows"] },
+  },
+  {
+    id: "travelSizeCategory", label: "Size Category", type: "text", section: "Tech & Travel Requirements",
+    appliesTo: { categories: ["TECH & TRAVEL"], merchAreas: ["Travel Pillows"] },
+  },
+  {
+    id: "travelImport", label: "Import", type: "toggle", section: "Tech & Travel Requirements",
+    appliesTo: { categories: ["TECH & TRAVEL"], merchAreas: ["Travel Pillows"] },
+  },
+  {
+    id: "materialContent", label: "Material Content", type: "text", section: "Tech & Travel Requirements",
+    appliesTo: { categories: ["TECH & TRAVEL"], merchAreas: ["Travel Pillows"] },
   },
 ];
 

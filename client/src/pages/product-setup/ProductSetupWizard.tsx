@@ -119,6 +119,16 @@ function getVisibleFields(state: WizardState): FieldConfig[] {
   });
 }
 
+function keepVisibleDynamicFields(state: WizardState): WizardState {
+  const visibleIds = new Set(getVisibleFields(state).map(field => field.id));
+  return {
+    ...state,
+    dynamicFields: Object.fromEntries(
+      Object.entries(state.dynamicFields).filter(([id]) => visibleIds.has(id)),
+    ),
+  };
+}
+
 // ─── Validation ───────────────────────────────────────────────────────────────
 function getMissingFields(state: WizardState): string[] {
   const missing: string[] = [];
@@ -1253,7 +1263,6 @@ export default function ProductSetupWizard() {
     setBenchmarkSource(product);
     setState(nextState);
     if (nextState.vendor) setVendorSearch(nextState.vendor);
-    const dynamicKeys = Object.keys(seededState.dynamicFields).map(key => `dynamic.${key}`);
     setBenchmarkFieldKeys(prev => new Set([...prev, ...addedKeys]));
     setBenchmarkPending(prev => new Set([...prev, ...addedKeys]));
     if (enteringWizard) {
@@ -1539,13 +1548,15 @@ export default function ProductSetupWizard() {
             benchmarkSource={benchmarkSource?.styleCode}
             benchmarkPending={benchmarkPending}
             onApprove={approveBenchmark}
-            onChange={v => { approveAll(["category", "subCategory", "merchArea", "planningGroup", "subGroup"]); setState(p => ({
-              ...p,
-              category: v.category, subCategory: v.subCategory,
-              merchArea: v.merchArea, planningGroup: v.planningGroup, subGroup: v.subGroup,
-              // Reset brand when category changes
-              ...(v.category !== p.category ? { brand: "" } : {}),
-            })); }}
+            onChange={v => {
+              approveAll(["category", "subCategory", "merchArea", "planningGroup", "subGroup"]);
+              setState(previous => keepVisibleDynamicFields({
+                ...previous,
+                category: v.category, subCategory: v.subCategory,
+                merchArea: v.merchArea, planningGroup: v.planningGroup, subGroup: v.subGroup,
+                ...(v.category !== previous.category ? { brand: "" } : {}),
+              }));
+            }}
           />
 
           {/* Alternate Hierarchy */}
