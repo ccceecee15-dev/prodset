@@ -25,10 +25,10 @@ import {
 import {
   BUYERS, VENDORS, BRANDS, HIERARCHY, CATEGORY_KEYS, DYNAMIC_FIELDS,
   EXISTING_PRODUCTS, COLOR_OPTIONS, SIZE_OPTIONS, STEPS,
-  APTOS_LEAVES, ALT_LEAVES,
+  APTOS_LEAVES, APTOS_OLD_AS_ALTERNATE,
   validateUPC, validateRange,
   getProductSetupAssets, getExistingProduct, registerMockCreatedProduct, saveMockProductImages,
-  type FieldConfig, type ExistingProduct, type HierarchyLeaf, type InnerPack, type PLCStatus, type ProductImage,
+  type FieldConfig, type ExistingProduct, type HierarchyLeaf, type AptosHierarchyLeaf, type InnerPack, type PLCStatus, type ProductImage,
 } from "./productSetupData";
 import ProductSetupEnhancements, { ProductImagesSection } from "./ProductSetupEnhancements";
 import {
@@ -40,10 +40,12 @@ import {
 interface WizardState {
   buyer: string; vendor: string; brand: string;
   longDescription: string; shortDescription: string; productType: string;
-  // APTOS hierarchy
-  category: string; subCategory: string; merchArea: string; planningGroup: string; subGroup: string;
-  // Alternate hierarchy
+  // NEW 4-level APTOS hierarchy (Division/Department/Class/SubClass)
+  aptosDivision: string; aptosDepartment: string; aptosClass: string; aptosSubClass: string;
+  // OLD Aptos hierarchy (now Alternate) — 5-level
   altCategory: string; altSubCategory: string; altMerchArea: string; altPlanningGroup: string; altSubGroup: string;
+  // Step 3 Category hierarchy (drives dynamic fields, independent from Aptos hierarchy)
+  category: string; subCategory: string; merchArea: string; planningGroup: string; subGroup: string;
   dynamicFields: Record<string, any>;
   leadTime: string; orderMultiple: string; distributionMultiple: string;
   replenishable: boolean; weight: string; length: string; width: string; height: string;
@@ -55,8 +57,9 @@ interface SKURow { id: string; color: string; size: string; skuCode: string; upc
 
 const EMPTY_STATE: WizardState = {
   buyer: "", vendor: "", brand: "", longDescription: "", shortDescription: "", productType: "",
-  category: "", subCategory: "", merchArea: "", planningGroup: "", subGroup: "",
+  aptosDivision: "", aptosDepartment: "", aptosClass: "", aptosSubClass: "",
   altCategory: "", altSubCategory: "", altMerchArea: "", altPlanningGroup: "", altSubGroup: "",
+  category: "", subCategory: "", merchArea: "", planningGroup: "", subGroup: "",
   dynamicFields: {},
   leadTime: "", orderMultiple: "", distributionMultiple: "",
   replenishable: true, weight: "", length: "", width: "", height: "",
@@ -801,12 +804,13 @@ function stateFromProduct(p: ExistingProduct): WizardState {
     longDescription: p.description,
     shortDescription: p.description.slice(0, 50),
     productType: "",
+    aptosDivision: "", aptosDepartment: "", aptosClass: "", aptosSubClass: "",
+    altCategory: "", altSubCategory: "", altMerchArea: "", altPlanningGroup: "", altSubGroup: "",
     category: p.hierarchy.category,
     subCategory: p.hierarchy.subCategory,
     merchArea: p.hierarchy.merchArea,
     planningGroup: p.hierarchy.planningGroup,
     subGroup: p.hierarchy.subGroup,
-    altCategory: "", altSubCategory: "", altMerchArea: "", altPlanningGroup: "", altSubGroup: "",
     dynamicFields: {
       plcStatus: assets.plcStatus === "Clearance" ? "Current" : assets.plcStatus,
       ...(p.planning.temperatureControl ? { temperatureControl: p.planning.temperatureControl } : {}),
@@ -889,14 +893,15 @@ function HierarchyCascade({
   const merchAreas    = uniq(leaves.filter(l =>
     (!value.category    || l.category    === value.category) &&
     (!value.subCategory || l.subCategory === value.subCategory)
-  ).map(l => l.merchArea));
+  ).map(l => l.merchArea).filter(Boolean));
+  const hasMerchAreas = merchAreas.length > 0;
   const planGroups    = uniq(leaves.filter(l =>
     (!value.category    || l.category    === value.category) &&
     (!value.subCategory || l.subCategory === value.subCategory) &&
     (!value.merchArea   || l.merchArea   === value.merchArea)
-  ).map(l => l.planningGroup));
+  ).map(l => l.planningGroup).filter(Boolean));
   // Sub-group: always show all groups (no parent filter) so user can pick from the full list to auto-fill upward
-  const subGroups     = uniq(leaves.map(l => l.subGroup));
+  const subGroups     = uniq(leaves.map(l => l.subGroup).filter(Boolean));
 
   const handleSubGroup = (sg: string) => {
     const match = leaves.find(l => l.subGroup === sg);
@@ -958,41 +963,167 @@ function HierarchyCascade({
           </Select>
         </FieldRow>
 
-        {/* Merch Area */}
-        <FieldRow label="Merch Area" benchmarked={!!benchmarkSource} benchmarkSource={benchmarkSource} reviewed={!benchmarkPending?.has("merchArea")} onApprove={() => onApprove?.("merchArea")}>
-          <Select value={value.merchArea} disabled={!value.subCategory} onValueChange={handleMerchArea}>
-            <SelectTrigger className="h-8 text-xs">
-              <SelectValue placeholder={value.subCategory ? "Select merch area…" : "Select sub category first"} />
-            </SelectTrigger>
-            <SelectContent>{merchAreas.map(c => <SelectItem key={c} value={c} className="text-xs">{c}</SelectItem>)}</SelectContent>
+        {hasMerchAreas && (
+          <>
+            {/* Merch Area */}
+            <FieldRow label="Merch Area" benchmarked={!!benchmarkSource} benchmarkSource={benchmarkSource} reviewed={!benchmarkPending?.has("merchArea")} onApprove={() => onApprove?.("merchArea")}>
+              <Select value={value.merchArea} disabled={!value.subCategory} onValueChange={handleMerchArea}>
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue placeholder={value.subCategory ? "Select merch area…" : "Select sub category first"} />
+                </SelectTrigger>
+                <SelectContent>{merchAreas.map(c => <SelectItem key={c} value={c} className="text-xs">{c}</SelectItem>)}</SelectContent>
+              </Select>
+            </FieldRow>
+
+            {/* Planning Group */}
+            <FieldRow label="Planning Group" benchmarked={!!benchmarkSource} benchmarkSource={benchmarkSource} reviewed={!benchmarkPending?.has("planningGroup")} onApprove={() => onApprove?.("planningGroup")}>
+              <Select value={value.planningGroup} disabled={!value.merchArea} onValueChange={handlePlanGroup}>
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue placeholder={value.merchArea ? "Select planning group…" : "Select merch area first"} />
+                </SelectTrigger>
+                <SelectContent>{planGroups.map(c => <SelectItem key={c} value={c} className="text-xs">{c}</SelectItem>)}</SelectContent>
+              </Select>
+            </FieldRow>
+
+            {/* Sub Planning Group — selecting this auto-populates all levels above */}
+            <FieldRow label="Sub Planning Group" helper="Selecting this auto-fills all levels above" benchmarked={!!benchmarkSource} benchmarkSource={benchmarkSource} reviewed={!benchmarkPending?.has("subGroup")} onApprove={() => onApprove?.("subGroup")}>
+              <Select value={value.subGroup} onValueChange={handleSubGroup}>
+                <SelectTrigger className={cn("h-8 text-xs", value.subGroup && "ring-1 ring-emerald-400")}>
+                  <SelectValue placeholder="Select or pick to auto-fill…" />
+                </SelectTrigger>
+                <SelectContent className="max-h-52">
+                  {subGroups.map(s => <SelectItem key={s} value={s} className="text-xs">{s}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </FieldRow>
+          </>
+        )}
+      </div>
+
+      {/* Completion indicator */}
+      {value.subGroup && (
+        <div className={cn("flex items-center gap-1.5 text-[10px] font-semibold px-2 py-1 rounded-lg", accentBg)}>
+          <Check size={10} /> Hierarchy complete
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Aptos 4-Level Cascade Hierarchy ─────────────────────────────────────────
+type AptosValue = { division: string; department: string; class: string; subClass: string };
+
+function AptosCascade({
+  leaves, value, onChange, title, accent = "primary", benchmarkSource, benchmarkPending, onApprove,
+}: {
+  leaves: AptosHierarchyLeaf[];
+  value: AptosValue;
+  onChange: (v: AptosValue) => void;
+  title: string;
+  accent?: "primary" | "amber";
+  benchmarkSource?: string;
+  benchmarkPending?: Set<string>;
+  onApprove?: (key: string) => void;
+}) {
+  const uniq = (arr: string[]) => Array.from(new Set(arr));
+
+  // Filter helpers — each level shows options consistent with selections above it
+  const divisions   = uniq(leaves.map(l => l.division));
+  const departments = uniq(leaves.filter(l => !value.division || l.division === value.division).map(l => l.department));
+  const classes     = uniq(leaves.filter(l => 
+    (!value.division || l.division === value.division) &&
+    (!value.department || l.department === value.department)
+  ).map(l => l.class).filter(Boolean));
+  const subClasses  = uniq(leaves.filter(l =>
+    (!value.division || l.division === value.division) &&
+    (!value.department || l.department === value.department) &&
+    (!value.class || l.class === value.class)
+  ).map(l => l.subClass).filter(Boolean));
+
+  const handleSubClass = (sc: string) => {
+    const match = leaves.find(l => l.subClass === sc);
+    if (match) onChange({ division: match.division, department: match.department, class: match.class, subClass: sc });
+  };
+  const handleClass = (v: string) => onChange({ ...value, class: v, subClass: "" });
+  const handleDept = (v: string) => onChange({ ...value, department: v, class: "", subClass: "" });
+  const handleDiv = (v: string) => onChange({ division: v, department: "", class: "", subClass: "" });
+
+  const accentClass = accent === "amber" ? "text-amber-600 dark:text-amber-400" : "text-primary";
+  const accentBg    = accent === "amber" ? "bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300" : "bg-primary/10 text-primary";
+
+  // Breadcrumb trail
+  const crumbs = [value.division, value.department, value.class, value.subClass].filter(Boolean);
+
+  return (
+    <div className={cn(
+      "rounded-xl border-2 p-4 space-y-3 transition-all duration-200",
+      accent === "amber"
+        ? "border-amber-200 dark:border-amber-800/50 bg-amber-50/30 dark:bg-amber-950/10"
+        : "border-primary/20 bg-primary/5 dark:bg-primary/5"
+    )}>
+      {/* Header */}
+      <div className="flex items-center gap-2 mb-1">
+        <GitBranch size={13} className={accentClass} />
+        <span className={cn("text-xs font-bold uppercase tracking-wider", accentClass)}>{title}</span>
+      </div>
+
+      {/* Breadcrumb trail */}
+      {crumbs.length > 0 && (
+        <div className="flex items-center gap-1 flex-wrap text-[10px] text-slate-400">
+          {crumbs.map((c, i) => (
+            <span key={i} className="flex items-center gap-1">
+              {i > 0 && <ChevronRight size={9} />}
+              <span className={i === crumbs.length - 1 ? "font-semibold text-slate-700 dark:text-slate-200" : ""}>{c}</span>
+            </span>
+          ))}
+        </div>
+      )}
+
+      {/* Dropdowns — 4 levels */}
+      <div className="grid grid-cols-1 gap-2.5">
+        {/* Division */}
+        <FieldRow label="Division" required benchmarked={!!benchmarkSource} benchmarkSource={benchmarkSource} reviewed={!benchmarkPending?.has("division")} onApprove={() => onApprove?.("division")}>
+          <Select value={value.division} onValueChange={handleDiv}>
+            <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select division…" /></SelectTrigger>
+            <SelectContent>{divisions.map(d => <SelectItem key={d} value={d} className="text-xs">{d}</SelectItem>)}</SelectContent>
           </Select>
         </FieldRow>
 
-        {/* Planning Group */}
-        <FieldRow label="Planning Group" benchmarked={!!benchmarkSource} benchmarkSource={benchmarkSource} reviewed={!benchmarkPending?.has("planningGroup")} onApprove={() => onApprove?.("planningGroup")}>
-          <Select value={value.planningGroup} disabled={!value.merchArea} onValueChange={handlePlanGroup}>
+        {/* Department */}
+        <FieldRow label="Department" benchmarked={!!benchmarkSource} benchmarkSource={benchmarkSource} reviewed={!benchmarkPending?.has("department")} onApprove={() => onApprove?.("department")}>
+          <Select value={value.department} disabled={!value.division} onValueChange={handleDept}>
             <SelectTrigger className="h-8 text-xs">
-              <SelectValue placeholder={value.merchArea ? "Select planning group…" : "Select merch area first"} />
+              <SelectValue placeholder={value.division ? "Select department…" : "Select division first"} />
             </SelectTrigger>
-            <SelectContent>{planGroups.map(c => <SelectItem key={c} value={c} className="text-xs">{c}</SelectItem>)}</SelectContent>
+            <SelectContent>{departments.map(d => <SelectItem key={d} value={d} className="text-xs">{d}</SelectItem>)}</SelectContent>
           </Select>
         </FieldRow>
 
-        {/* Sub Planning Group — selecting this auto-populates all levels above */}
-        <FieldRow label="Sub Planning Group" helper="Selecting this auto-fills all levels above" benchmarked={!!benchmarkSource} benchmarkSource={benchmarkSource} reviewed={!benchmarkPending?.has("subGroup")} onApprove={() => onApprove?.("subGroup")}>
-          <Select value={value.subGroup} onValueChange={handleSubGroup}>
-            <SelectTrigger className={cn("h-8 text-xs", value.subGroup && "ring-1 ring-emerald-400")}>
+        {/* Class */}
+        <FieldRow label="Class" benchmarked={!!benchmarkSource} benchmarkSource={benchmarkSource} reviewed={!benchmarkPending?.has("class")} onApprove={() => onApprove?.("class")}>
+          <Select value={value.class} disabled={!value.department} onValueChange={handleClass}>
+            <SelectTrigger className="h-8 text-xs">
+              <SelectValue placeholder={value.department ? "Select class…" : "Select department first"} />
+            </SelectTrigger>
+            <SelectContent>{classes.map(c => <SelectItem key={c} value={c} className="text-xs">{c}</SelectItem>)}</SelectContent>
+          </Select>
+        </FieldRow>
+
+        {/* Sub Class — selecting this auto-populates all levels above */}
+        <FieldRow label="Sub Class" helper="Selecting this auto-fills all levels above" benchmarked={!!benchmarkSource} benchmarkSource={benchmarkSource} reviewed={!benchmarkPending?.has("subClass")} onApprove={() => onApprove?.("subClass")}>
+          <Select value={value.subClass} onValueChange={handleSubClass}>
+            <SelectTrigger className={cn("h-8 text-xs", value.subClass && "ring-1 ring-emerald-400")}>
               <SelectValue placeholder="Select or pick to auto-fill…" />
             </SelectTrigger>
             <SelectContent className="max-h-52">
-              {subGroups.map(s => <SelectItem key={s} value={s} className="text-xs">{s}</SelectItem>)}
+              {subClasses.map(s => <SelectItem key={s} value={s} className="text-xs">{s}</SelectItem>)}
             </SelectContent>
           </Select>
         </FieldRow>
       </div>
 
       {/* Completion indicator */}
-      {value.subGroup && (
+      {value.subClass && (
         <div className={cn("flex items-center gap-1.5 text-[10px] font-semibold px-2 py-1 rounded-lg", accentBg)}>
           <Check size={10} /> Hierarchy complete
         </div>
@@ -1538,10 +1669,12 @@ export default function ProductSetupWizard() {
   );
 
   const renderStep2 = () => {
-    const aptosValue: HierarchyValue = {
-      category: state.category, subCategory: state.subCategory,
-      merchArea: state.merchArea, planningGroup: state.planningGroup, subGroup: state.subGroup,
+    // 4-level Aptos Hierarchy (new) — does NOT affect Step 3
+    const aptosValue: AptosValue = {
+      division: state.aptosDivision, department: state.aptosDepartment,
+      class: state.aptosClass, subClass: state.aptosSubClass,
     };
+    // 5-level Alternate Hierarchy (old Aptos) — DOES affect Step 3 fields
     const altValue: HierarchyValue = {
       category: state.altCategory, subCategory: state.altSubCategory,
       merchArea: state.altMerchArea, planningGroup: state.altPlanningGroup, subGroup: state.altSubGroup,
@@ -1552,47 +1685,55 @@ export default function ProductSetupWizard() {
         <div>
           <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">Hierarchy Selection</h2>
           <p className="text-xs text-slate-500 mt-0.5">
-            Map the product to both the APTOS and Alternate planning hierarchies — selecting the lowest level auto-fills all levels above
+            Map the product to both the APTOS (4-level) and Alternate (5-level) planning hierarchies — selecting the lowest level auto-fills all levels above
           </p>
         </div>
 
-        <BenchmarkSectionSummary pending={pendingFor(["category", "subCategory", "merchArea", "planningGroup", "subGroup"])} total={benchmarkSource ? 5 : 0} onApproveAll={() => approveAll(["category", "subCategory", "merchArea", "planningGroup", "subGroup"])} />
+        <BenchmarkSectionSummary pending={pendingFor(["altCategory", "altSubCategory", "altMerchArea", "altPlanningGroup", "altSubGroup"])} total={benchmarkSource ? 5 : 0} onApproveAll={() => approveAll(["altCategory", "altSubCategory", "altMerchArea", "altPlanningGroup", "altSubGroup"])} />
         <div className="grid grid-cols-2 gap-4">
-          {/* APTOS Hierarchy */}
-          <HierarchyCascade
+          {/* NEW 4-Level APTOS Hierarchy (Division/Department/Class/SubClass) */}
+          {/* Note: Aptos selections are purely informational and do NOT drive Step 3 fields */}
+          <AptosCascade
             leaves={APTOS_LEAVES}
             value={aptosValue}
             title="APTOS Hierarchy"
             accent="primary"
-            benchmarkSource={benchmarkSource?.styleCode}
-            benchmarkPending={benchmarkPending}
-            onApprove={approveBenchmark}
             onChange={v => {
-              approveAll(["category", "subCategory", "merchArea", "planningGroup", "subGroup"]);
-              setState(previous => keepVisibleDynamicFields({
+              setState(previous => ({
                 ...previous,
-                category: v.category, subCategory: v.subCategory,
-                merchArea: v.merchArea, planningGroup: v.planningGroup, subGroup: v.subGroup,
-                ...(v.category !== previous.category ? { brand: "" } : {}),
+                aptosDivision: v.division, aptosDepartment: v.department,
+                aptosClass: v.class, aptosSubClass: v.subClass,
               }));
             }}
           />
 
-          {/* Alternate Hierarchy */}
+          {/* Alternate Hierarchy (Old 5-level Aptos) */}
+          {/* The Alternate selections DRIVE Step 3 dynamic fields via category/subCategory/merchArea */}
           <HierarchyCascade
-            leaves={ALT_LEAVES}
+            leaves={APTOS_OLD_AS_ALTERNATE}
             value={altValue}
             title="Alternate Hierarchy"
             accent="amber"
-            onChange={v => setState(p => ({
-              ...p,
-              altCategory: v.category, altSubCategory: v.subCategory,
-              altMerchArea: v.merchArea, altPlanningGroup: v.planningGroup, altSubGroup: v.subGroup,
-            }))}
+            benchmarkSource={benchmarkSource?.styleCode}
+            benchmarkPending={benchmarkPending}
+            onApprove={approveBenchmark}
+            onChange={v => {
+              approveAll(["altCategory", "altSubCategory", "altMerchArea", "altPlanningGroup", "altSubGroup"]);
+              setState(previous => keepVisibleDynamicFields({
+                ...previous,
+                // Update Alternate hierarchy state
+                altCategory: v.category, altSubCategory: v.subCategory,
+                altMerchArea: v.merchArea, altPlanningGroup: v.planningGroup, altSubGroup: v.subGroup,
+                // IMPORTANT: Also update category fields which drive Step 3
+                category: v.category, subCategory: v.subCategory,
+                merchArea: v.merchArea, planningGroup: v.planningGroup, subGroup: v.subGroup,
+                ...(v.category !== previous.altCategory ? { brand: "" } : {}),
+              }));
+            }}
           />
         </div>
 
-        {/* Dynamic fields hint */}
+        {/* Dynamic fields hint - driven by Alternate hierarchy selection (via category fields) */}
         {state.category && (
           <div className="animate-in fade-in duration-300 p-4 rounded-xl border border-dashed border-primary/30 bg-primary/5">
             <div className="flex items-start gap-3">
@@ -1600,7 +1741,7 @@ export default function ProductSetupWizard() {
               <div>
                 <p className="text-xs font-semibold text-primary">Dynamic fields activated</p>
                 <p className="text-[11px] text-slate-500 mt-0.5">
-                  {visibleFields.length} attribute{visibleFields.length !== 1 ? "s" : ""} will be shown in Step 3 based on your APTOS hierarchy selection
+                  {visibleFields.length} attribute{visibleFields.length !== 1 ? "s" : ""} will be shown in Step 3 based on your Alternate hierarchy selection
                   {state.category === "ALCOHOL" && " — including age restriction and licensing fields"}
                   {state.category === "FRESH FOOD" && " — including shelf life, temperature control and allergen fields"}
                   {state.category === "FASHION" && " — including fashion season, fit type and colourway fields"}

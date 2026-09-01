@@ -776,14 +776,14 @@ function HierarchyCascade({
   const merchAreas    = uniq(leaves.filter(l =>
     (!value.category    || l.category    === value.category) &&
     (!value.subCategory || l.subCategory === value.subCategory)
-  ).map(l => l.merchArea));
+  ).map(l => l.merchArea).filter(Boolean));
   const planGroups    = uniq(leaves.filter(l =>
     (!value.category    || l.category    === value.category) &&
     (!value.subCategory || l.subCategory === value.subCategory) &&
     (!value.merchArea   || l.merchArea   === value.merchArea)
-  ).map(l => l.planningGroup));
+  ).map(l => l.planningGroup).filter(Boolean));
   // Sub-group: always show all groups (no parent filter) so user can pick from the full list to auto-fill upward
-  const subGroups     = uniq(leaves.map(l => l.subGroup));
+  const subGroups     = uniq(leaves.map(l => l.subGroup).filter(Boolean));
 
   const handleSubGroup = (sg: string) => {
     const match = leaves.find(l => l.subGroup === sg);
