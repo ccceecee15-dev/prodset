@@ -129,6 +129,19 @@ function keepVisibleDynamicFields(state: WizardState): WizardState {
   };
 }
 
+type DynamicFieldLevel = "universal" | "category" | "subCategory" | "merchArea";
+
+function getDynamicFieldLevel(field: FieldConfig): DynamicFieldLevel {
+  if (!field.appliesTo) return "universal";
+  if (field.appliesTo.merchAreas) return "merchArea";
+  if (field.appliesTo.subCategories) return "subCategory";
+  return "category";
+}
+
+function formatHierarchyValue(value: string): string {
+  return value.toLowerCase().replace(/\b\w/g, character => character.toUpperCase());
+}
+
 // ─── Validation ───────────────────────────────────────────────────────────────
 function getMissingFields(state: WizardState): string[] {
   const missing: string[] = [];
@@ -1179,9 +1192,11 @@ export default function ProductSetupWizard() {
     return new Set(steps);
   }, [editReasons]);
 
-  // Group visible fields by section
+  // Keep dynamic fields grouped by the hierarchy level that activated them.
   const fieldsBySection = useMemo(() => {
-    const map: Record<string, FieldConfig[]> = {};
+    const groups: Record<DynamicFieldLevel, FieldConfig[]> = {
+      universal: [], category: [], subCategory: [], merchArea: [],
+    };
     // Existing styles use the dedicated PLC Status control above. Keep the
     // initial-creation field in the new-product flow, but avoid presenting a
     // second lifecycle editor inside edit mode.
@@ -1189,11 +1204,15 @@ export default function ProductSetupWizard() {
       ? visibleFields.filter(field => field.id !== "plcStatus")
       : visibleFields;
     for (const f of fieldsForWizard) {
-      if (!map[f.section]) map[f.section] = [];
-      map[f.section].push(f);
+      groups[getDynamicFieldLevel(f)].push(f);
     }
-    return map;
-  }, [visibleFields, isEditMode]);
+    return [
+      { key: "universal" as const, title: "Universal Information", fields: groups.universal },
+      { key: "category" as const, title: state.category ? `${formatHierarchyValue(state.category)} Requirements` : "Category Requirements", fields: groups.category },
+      { key: "subCategory" as const, title: state.subCategory ? `${state.subCategory} Requirements` : "Sub-category Requirements", fields: groups.subCategory },
+      { key: "merchArea" as const, title: state.merchArea ? `${state.merchArea} Requirements` : "Merch Area Requirements", fields: groups.merchArea },
+    ].filter(group => group.fields.length > 0);
+  }, [visibleFields, isEditMode, state.category, state.subCategory, state.merchArea]);
 
   const colorOptions = COLOR_OPTIONS[state.category] ?? COLOR_OPTIONS.DEFAULT;
   const sizeOptions  = SIZE_OPTIONS[state.category]  ?? SIZE_OPTIONS.DEFAULT;
@@ -1605,22 +1624,22 @@ export default function ProductSetupWizard() {
           {state.merchArea ? ` · ${state.merchArea}` : ""}
         </p>
       </div>
-      {Object.keys(fieldsBySection).length === 0
+      {fieldsBySection.length === 0
         ? (
           <div className="text-center py-16 text-slate-400">
             <Sliders size={32} className="mx-auto mb-3 opacity-30" />
             <p className="text-sm">Select a hierarchy in Step 2 to unlock dynamic attributes</p>
           </div>
         )
-        : Object.entries(fieldsBySection).map(([section, fields]) => (
-          <SectionCard key={section} title={section}>
+        : fieldsBySection.map(group => (
+          <SectionCard key={group.key} title={group.title}>
             <BenchmarkSectionSummary
-              pending={pendingFor(fields.map(field => `dynamic.${field.id}`))}
-              total={benchmarkSource ? fields.filter(field => benchmarked(`dynamic.${field.id}`)).length : 0}
-              onApproveAll={() => approveAll(fields.map(field => `dynamic.${field.id}`))}
+              pending={pendingFor(group.fields.map(field => `dynamic.${field.id}`))}
+              total={benchmarkSource ? group.fields.filter(field => benchmarked(`dynamic.${field.id}`)).length : 0}
+              onApproveAll={() => approveAll(group.fields.map(field => `dynamic.${field.id}`))}
             />
             <div className="grid grid-cols-2 gap-4">
-              {fields.map(field => {
+              {group.fields.map(field => {
                 const val   = state.dynamicFields[field.id];
                 const err   = fieldErrors[field.id];
                 return (

@@ -468,6 +468,23 @@ export const DYNAMIC_FIELDS: FieldConfig[] = [
   // FASHION CATEGORY
   // ───────────────────────────────────────────────────────────────────────────
   {
+    id: "fashionLeadTime", label: "Lead Time", type: "number", section: "Fashion Requirements",
+    appliesTo: { categories: ["FASHION"] },
+  },
+  {
+    id: "fashionCalendar", label: "Calendar", type: "dropdown", section: "Fashion Requirements",
+    options: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+    appliesTo: { categories: ["FASHION"] },
+  },
+  {
+    id: "fashionSizeCategory", label: "Size Category", type: "text", section: "Fashion Requirements",
+    appliesTo: { categories: ["FASHION"] },
+  },
+  {
+    id: "fashionAllowCustomerOrder", label: "Allow Customer Order", type: "toggle", section: "Fashion Requirements",
+    appliesTo: { categories: ["FASHION"] },
+  },
+  {
     id: "handbagShapes", label: "Handbag Shapes", type: "text", section: "Fashion Requirements",
     appliesTo: { categories: ["FASHION"], subCategories: ["Handbags"] },
   },
@@ -475,6 +492,10 @@ export const DYNAMIC_FIELDS: FieldConfig[] = [
   // ───────────────────────────────────────────────────────────────────────────
   // LOCAL CATEGORY
   // ───────────────────────────────────────────────────────────────────────────
+  {
+    id: "localProductType", label: "Local Product Type", type: "text", section: "Local Requirements",
+    appliesTo: { categories: ["LOCAL"] },
+  },
   {
     id: "width", label: "Width (cm)", type: "number", section: "Local Requirements",
     appliesTo: { categories: ["LOCAL"], merchAreas: ["Local Food"] },
@@ -491,6 +512,10 @@ export const DYNAMIC_FIELDS: FieldConfig[] = [
   // ───────────────────────────────────────────────────────────────────────────
   // SPECIALTY CATEGORY
   // ───────────────────────────────────────────────────────────────────────────
+  {
+    id: "specialtyProductType", label: "Specialty Product Type", type: "text", section: "Specialty Requirements",
+    appliesTo: { categories: ["SPECIALTY"] },
+  },
   {
     id: "designerBrands", label: "Designer Brands", type: "text", section: "Specialty Requirements",
     appliesTo: { categories: ["SPECIALTY"], merchAreas: ["ESG"] },
@@ -539,6 +564,10 @@ export const DYNAMIC_FIELDS: FieldConfig[] = [
   // ───────────────────────────────────────────────────────────────────────────
   // TECH & TRAVEL CATEGORY
   // ───────────────────────────────────────────────────────────────────────────
+  {
+    id: "travelProductType", label: "Travel Product Type", type: "text", section: "Tech & Travel Requirements",
+    appliesTo: { categories: ["TECH & TRAVEL"], subCategories: ["Travel"] },
+  },
   {
     id: "imegRtv", label: "IMEG RTV", type: "text", section: "Tech & Travel Requirements",
     appliesTo: { categories: ["TECH & TRAVEL"] },
